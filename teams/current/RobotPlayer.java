@@ -32,7 +32,11 @@ public class RobotPlayer {
 		
 
 		// Yay let's start doing stuff in a loop!
-		while (true) {
+		while (true)
+		{
+			// Update current robot state
+			curRound = Clock.getRoundNum();
+		
 			try {
 				if (myType == RobotType.HQ)
 					hqCode();
