@@ -2,12 +2,8 @@ package testplayer;
 
 import battlecode.common.*;
 
-/** The example funcs player is a player meant to demonstrate basic usage of the most common commands.
- * Robots will move around randomly, occasionally mining and writing useless messages.
- * The HQ will spawn soldiers continuously.
- */
-public class RobotPlayer {
-
+public class RobotPlayer
+{
 	// Subsystems
 	public final RobotController rc;
 	public final Communicator comm;
@@ -16,6 +12,9 @@ public class RobotPlayer {
 	public final RobotType myType;
 	public final int id = -1;
 	public final int spawnRound;
+	
+	// Robot state
+	public int curRound;
 
 	public static void run(RobotController myRC)
 	{
@@ -29,7 +28,11 @@ public class RobotPlayer {
 		this.myType = rc.getType();
 
 		// Yay let's start doing stuff in a loop!
-		while (true) {
+		while (true)
+		{
+			// Update current robot state
+			curRound = Clock.getRoundNum();
+		
 			try {
 				if (myType == RobotType.HQ)
 					hqCode();
