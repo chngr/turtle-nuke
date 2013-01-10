@@ -6,18 +6,20 @@ Encapsulates all communications-related functions
 import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
-public class Comm
+public class Communicator
 {
-	RobotController rc;
+	private RobotPlayer r;
 
-	Comm(RobotController robot)
+	Communicator(RobotPlayer robot)
 	{
-		rc = robot;
+		this.r = robot;
 	}
 	
-	void send(int offset, unsigned char* data)
+	// Posts data to offset in freqtable, with datalen < 10
+	// e.g. send(2, "hi", 2) will post \x68\x69 to channel 8175
+	void send(int offset, unsigned char* data, int datalen)
 	{
-	
+		
 	}
 	
 	void receive(int offset, unsigned char* data)
