@@ -1,3 +1,4 @@
+package current;
 /*************************************
 comm.java - Communications interface
 Encapsulates all communications-related functions
@@ -17,12 +18,12 @@ public class Communicator
 	
 	// Posts data to offset in freqtable, with datalen < 10
 	// e.g. send(2, "hi", 2) will post \x68\x69 to channel 8175
-	void send(int offset, unsigned char* data, int datalen)
+	void send(int offset, char[] data, int datalen)
 	{
 		
 	}
 	
-	void receive(int offset, unsigned char* data)
+	void receive(int offset, char[] data)
 	{
 		
 	}
