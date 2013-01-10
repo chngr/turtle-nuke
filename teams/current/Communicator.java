@@ -3,6 +3,7 @@ Communicator.java - Communications interface
 Encapsulates all communications-related functions
 *************************************/
 
+import java.lang.StringBuilder;
 import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
@@ -10,48 +11,73 @@ public class Communicator
 {
 	private RobotPlayer r;
 	private static final char expiryTime = 2;	// measured in number of rounds, including round on which msg is sent
-
+	private static final char maxMsgQueueLen = 20; // measured in number of channels, e.g. 20 len = 60 chars.
+	
 	Communicator(RobotPlayer robot)
 	{
 		this.r = robot;
 	}
-
-	// Posts data to offset in freqtable.
+	
+	// Posts data to the message queue starting at freqtable[offset]
 	// e.g. send(2, "hi", 2) will post \x68\x69 to channel 8175
 	// If datalen > 2, remaining bytes will be written to successive freqtable channels
 	// e.g. send(2, "hello", 5) will write to channels 8175, 1867, 5264.
+	// The set of messages beginning at 8175 is the "message queue starting at 8175".
 	public void send(int offset, char[] data, int datalen)
 	{
-		int packet;
+		unsigned int packet;
+		char c1, c2, c3;
 		for (int i = offset, c = 0; c < datalen; i++, c+=3)
 		{
-			// Find the next open spot for a packet
+			// Find the next open spot in the message queue for a packet
 			while(isValidPacket(r.rc.readBroadcast(freqtable[i])))
 				i++;
-
-			// Three data bytes (with MSB first)
-			packet = (data[c] << 24) | (data[c+1] << 16) | (data[c+2] << 8);
+				
+			c1 = data[c];
+			c2 = (c+1 > datalen) ? 0xAA : data[c+1];	// do not change these padding values!
+			c3 = (c+2 > datalen) ? 0x55 : data[c+2];	// do not change these padding values!
+			
+			// Three data bytes (with MSB last to speed up receiving)
+			packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
 			// Add a checksum as the last byte
-			packet |= data[c] ^ data[c+1] ^ data[c+2] ^ (r.curRound & 0xFF);
+			packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF);
 			r.rc.broadcast(freqtable[i], packet);
 		}
 	}
-
-	public int receive(int offset)
+	
+	// Reads all valid messages in the message queue starting at channel freqtable[offset]
+	// Returns maxMsgQueueLen messages as an array of 3 * maxMsgQueueLen chars.
+	public char[] receive(int offset)
 	{
+		unsigned int packet, i = 0;
+		char[] data = new char [3 * maxMsgQueueLen];
 
+		while(isValidPacket(packet = r.rc.readBroadcast(freqtable[offset])))
+		{
+			packet >>= 8;	// First character (discarding checksum)
+			data[i++] = (packet & 0xFF);
+
+			packet >>= 8;	// Second character
+			data[i++] = (packet & 0xFF);
+			
+			packet >>= 8;	// Third character
+			data[i++] = (packet & 0xFF);
+
+			offset++;
+		}
+		return data;
 	}
-
+	
 	bool isValidPacket(unsigned int packet)
 	{
-		unsigned char checksum = (packet & 0xFF);
+		char checksum = (packet & 0xFF);
 		checksum ^= ((packet & 0xFF000000) >> 24);
 		checksum ^= ((packet & 0x00FF0000) >> 16);
 		checksum ^= ((packet & 0x0000FF00) >> 08);
 		return ((r.curRound & 0xFF) - checksum) < this.expiryTime);
 	}
-
-	int[] freqtable = {
+	
+	private static int[] freqtable = {
 		4079, 983, 7897, 4491, 7912, 3544, 4368, 3812, 4393, 5123, 6422, 3627, 1849, 3903, 8499, 2368, 6510, 7987, 3510, 2181, 9867, 1577, 2177, 7485, 1762, 9168, 207, 373, 7704, 5370, 4765, 7576, 5157, 4437, 7257, 4832, 4740, 4609, 9037, 6804, 6703, 680, 854, 851, 5604, 9386, 5078, 2896, 3592, 2785, 
 		3320, 6403, 6645, 2659, 4666, 2635, 7981, 7859, 5502, 2920, 5507, 7416, 4652, 9096, 9975, 6954, 4303, 8908, 5788, 6702, 5996, 3212, 5579, 4837, 2335, 4536, 383, 5460, 9436, 8425, 5662, 2159, 1808, 9521, 6172, 6348, 6789, 7355, 7620, 7904, 7679, 5263, 6270, 2741, 5590, 7227, 7129, 3474, 2009, 6315, 
 		9403, 5397, 9312, 9818, 5320, 8287, 5081, 1448, 8860, 4565, 6281, 8730, 5221, 7591, 9040, 7809, 7171, 1289, 3583, 5383, 5916, 7968, 6454, 7224, 3277, 4694, 9710, 8874, 2451, 8268, 1873, 9577, 9399, 3135, 5433, 2650, 7969, 8298, 2095, 5254, 5547, 262, 7148, 829, 8, 2460, 7775, 2338, 904, 4275, 
