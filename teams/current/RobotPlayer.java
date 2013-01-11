@@ -23,11 +23,12 @@ public class RobotPlayer {
 			
 			while(true)
 			{
-				curRound = Clock.getNumRounds();
+				br.curRound = Clock.getNumRounds();
 				br.run();
-				
-				myRC.yield();
+
+				br.rc.yield();
 			}
+
 		} catch (Exception e) {
 			//DEBUG
             System.out.println("Robot constructor failed");

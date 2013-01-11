@@ -1,8 +1,6 @@
 package current;
 
-import battlecode.common.Clock;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 
 public class BaseRobot
 {
