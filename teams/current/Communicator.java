@@ -70,11 +70,12 @@ public class Communicator
 	
 	boolean isValidPacket(int packet)
 	{
+		//Efficiency note: some of this casting is probably unnecessary
 		char checksum = (char) (packet & 0xFF);
-		checksum ^= ((packet & 0xFF000000) >> 24);
-		checksum ^= ((packet & 0x00FF0000) >> 16);
-		checksum ^= ((packet & 0x0000FF00) >> 8);
-		return ((r.curRound & 0xFF) - checksum) < expiryTime;
+		checksum ^= (char)((packet & 0xFF000000) >> 24);
+		checksum ^= (char)((packet & 0x00FF0000) >> 16);
+		checksum ^= (char)((packet & 0x0000FF00) >> 8);
+		return ((char)(r.curRound & 0xFF) - checksum) < expiryTime;
 	}
 	
 	private static int[] freqtable = {
