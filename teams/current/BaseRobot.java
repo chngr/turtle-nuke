@@ -9,6 +9,9 @@ public class BaseRobot
 	public final Communicator comm;
 	public final Navigator nav;
 	
+	// State data
+	public final int maph, mapw;
+	
 	// Robot data
 	public final int id;
 	public final int spawnRound;
@@ -26,6 +29,9 @@ public class BaseRobot
 		this.id = rc.getRobot().getID();
 		this.spawnRound = Clock.getRoundNum();
 		this.myType = rc.getType();
+		
+		this.maph = rc.getMapHeight();
+		this.mapw = rc.getMapWidth();
 	}
 	
 	public void run() throws GameActionException{
