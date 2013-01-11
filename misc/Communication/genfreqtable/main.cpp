@@ -6,8 +6,8 @@
 #include <ctime>
 using namespace std;
 
-#define NUM_FREQS 10000
-#define TOTAL_FREQS 10000
+#define NUM_FREQS 25000
+#define TOTAL_FREQS 65535
 
 int main()
 {

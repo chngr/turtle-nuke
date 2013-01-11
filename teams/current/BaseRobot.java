@@ -19,6 +19,7 @@ public class BaseRobot
 	
 	// State variables
 	public int curRound;
+	public MapLocation curLoc;
 
 	BaseRobot(RobotController myRC){
 		this.rc = myRC;
@@ -35,6 +36,6 @@ public class BaseRobot
 	}
 	
 	public void run() throws GameActionException{
-		
+		this.curLoc = rc.getLocation();
 	}
 }
