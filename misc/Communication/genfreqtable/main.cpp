@@ -6,7 +6,7 @@
 #include <ctime>
 using namespace std;
 
-#define NUM_FREQS 25000
+#define NUM_FREQS 16000
 #define TOTAL_FREQS 65535
 
 int main()
@@ -31,7 +31,19 @@ int main()
         outputfile << freqs[i] << ", ";
     }
     outputfile << "\n";
+    outputfile << "\t};\n";
+
+    outputfile << "\tprivate static final int stickyfreqtable = {";
+    for (int i = 0; i < 2500; i++)
+    {
+        if (i % 100 == 0)
+            outputfile << "\n\t\t";
+
+        outputfile << freqs[NUM_FREQS + i] << ", ";
+    }
+    outputfile << "\n";
     outputfile << "\t};";
+
     outputfile.close();
 
     return 0;
