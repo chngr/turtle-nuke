@@ -6,7 +6,7 @@
 #include <ctime>
 using namespace std;
 
-#define NUM_FREQS 2600
+#define NUM_FREQS 10000
 #define TOTAL_FREQS 10000
 
 int main()
@@ -20,11 +20,12 @@ int main()
     random_shuffle(freqs.begin(), freqs.end());
 
     ofstream outputfile("freqtable.txt");
-    outputfile << "\tint[] freqtable = {";
+    outputfile << "\tprivate static final int freqtable_size = " << NUM_FREQS << ";\n";
+    outputfile << "\tprivate static int[] freqtable = {";
 
     for (int i = 0; i < NUM_FREQS; i++)
     {
-        if (i % 50 == 0)
+        if (i % 100 == 0)
             outputfile << "\n\t\t";
 
         outputfile << freqs[i] << ", ";

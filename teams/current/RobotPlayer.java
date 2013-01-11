@@ -31,7 +31,7 @@ public class RobotPlayer {
 
 		} catch (Exception e) {
 			//DEBUG
-            System.out.println("Robot constructor failed");
+            System.out.println("Shit happened!");
             e.printStackTrace();
             br.rc.addMatchObservation(e.toString());
 		}

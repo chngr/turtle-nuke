@@ -10,7 +10,7 @@ public class BaseRobot
 	
 	// Robot data
 	public final RobotType myType;
-	public final int id = -1;
+	public final int id;
 	public final int spawnRound;
 	
 	// State variables
