@@ -10,13 +10,13 @@ public class BaseRobot
 	
 	// Robot data
 	public final RobotType myType;
-	public final int id = -1;
+	public final int id;
 	public final int spawnRound;
 	
 	// State variables
 	public int curRound;
 
-	BaseRobot(RobotController rc){
+	BaseRobot(RobotController myRC){
 		this.rc = myRC;
 		this.comm = new Communicator(this);
 		
@@ -26,5 +26,7 @@ public class BaseRobot
 		this.myType = rc.getType();
 	}
 	
-	public abstract void run() throws GameActionException;
+	public void run() throws GameActionException{
+		
+	}
 }

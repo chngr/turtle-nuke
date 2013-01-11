@@ -1,8 +1,14 @@
 package current;
 
-public class SoldierRobot extends BaseRobot {
+import battlecode.common.*;
 
-	public void run() throws GameException
+public class SoldierRobot extends BaseRobot {
+	
+	SoldierRobot(RobotController rc){
+		super(rc);
+	}
+
+	public void run() throws GameActionException
 	{
 		if (rc.isActive()) {
 			if (Math.random()<0.005) {

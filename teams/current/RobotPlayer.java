@@ -23,7 +23,7 @@ public class RobotPlayer {
 			
 			while(true)
 			{
-				br.curRound = Clock.getNumRounds();
+				br.curRound = Clock.getRoundNum();
 				br.run();
 
 				br.rc.yield();
