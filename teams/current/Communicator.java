@@ -8,7 +8,7 @@ Each robot has a unique offset in the frequency table that depends on the curren
 The [maxMsgQueueLen] consecutive channels starting at that offset is that robot's "inbox".
 This implements a naive frequency-hopping scheme.
 
-Stickies are in a global messagespace
+Stickies are in a global messagespace called a stickyspace. I like sticky things.
 
 Each channel contains a 32-bit packet, containing:
 |Data byte 3| |Data byte 2| |Data byte 1| |Checksum + timestamp byte|
@@ -105,7 +105,9 @@ public class Communicator
 	}
 	public int curStickyOffset()
 	{
-		return r.curRound;
+		// The constant 40 guarantees that each robot will be able to post at least 1 message
+		// each round to the stickyspace.
+		return (freqtable_size - 40 * r.curRound) % freqtable_size;
 	}
 	
 	private static final int freqtable_size = 16000;
