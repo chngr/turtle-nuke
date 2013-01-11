@@ -1,8 +1,14 @@
 package current;
 
-public class Artillary extends BaseRobot {
+import battlecode.common.*;
 
-	public void run() throws GameException
+public class Artillery extends BaseRobot {
+
+	Artillery(RobotController rc){
+		super(rc);
+	}
+	
+	public void run() throws GameActionException
 	{
 		rc.suicide();
 	}
