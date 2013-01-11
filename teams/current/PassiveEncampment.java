@@ -1,9 +1,16 @@
 package current;
 
-public class PassiveEncampment extends BaseRobot {
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
 
-	public void run() throws GameException
+public class PassiveEncampment extends BaseRobot {
+	
+	PassiveEncampment(RobotController rc){
+		super(rc);
+	}
+
+	public void run() throws GameActionException
 	{
-		rc.suicide();
+		rc.yield();
 	}
 }

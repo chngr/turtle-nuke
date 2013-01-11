@@ -1,8 +1,14 @@
 package current;
 
+import battlecode.common.*;
+
 public class HQRobot extends BaseRobot {
 
-	public void run() throws GameException
+	HQRobot(RobotController rc){
+		super(rc);
+	}
+	
+	public void run() throws GameActionException
 	{
 		if (rc.isActive())
 		{
