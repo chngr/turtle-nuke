@@ -4,6 +4,9 @@ import battlecode.common.*;
 
 public class SoldierRobot extends BaseRobot {
 	
+	// Subsystems
+	
+	
 	SoldierRobot(RobotController rc){
 		super(rc);
 	}

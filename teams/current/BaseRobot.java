@@ -7,11 +7,12 @@ public class BaseRobot
 	// Subsystems
 	public final RobotController rc;
 	public final Communicator comm;
+	public final Navigator nav;
 	
 	// Robot data
-	public final RobotType myType;
 	public final int id;
 	public final int spawnRound;
+	public final RobotType myType;
 	
 	// State variables
 	public int curRound;
@@ -19,6 +20,7 @@ public class BaseRobot
 	BaseRobot(RobotController myRC){
 		this.rc = myRC;
 		this.comm = new Communicator(this);
+		this.nav = new Navigator(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();
