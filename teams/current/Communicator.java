@@ -1,9 +1,11 @@
+package current;
+
 /*************************************
 Communicator.java - Communications interface
 Encapsulates all communications-related functions
 *************************************/
 
-import java.lang.StringBuilder;
+import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
@@ -23,7 +25,7 @@ public class Communicator
 	// If datalen > 2, remaining bytes will be written to successive freqtable channels
 	// e.g. send(2, "hello", 5) will write to channels 8175, 1867, 5264.
 	// The set of messages beginning at 8175 is the "message queue starting at 8175".
-	public void send(int offset, char[] data, int datalen)
+	public void send(int offset, char[] data, int datalen) throws GameActionException
 	{
 		int packet;
 		char c1, c2, c3;
@@ -47,7 +49,7 @@ public class Communicator
 	
 	// Reads all valid messages in the message queue starting at channel freqtable[offset]
 	// Returns maxMsgQueueLen messages as an array of 3 * maxMsgQueueLen chars.
-	public char[] receive(int offset)
+	public char[] receive(int offset) throws GameActionException
 	{
 		int packet, i = 0;
 		char[] data = new char [3 * maxMsgQueueLen];
