@@ -1,11 +1,20 @@
 package current;
 
-import battlecode.common.*;
+/*************************************
+Navigator.java - Navigation interfaces
+Encapsulates all navigation-related functions.
+DOES NOT INCLUDE INTELLIGENT GOAL SETTING.
 
+In our internal representation of the map/costs:
+[object id (if relevant)]  [cost]
+       16 bits             16 bits
+e.g. 0x0002000A = object id 2 with cost 10
+*************************************/
 
 //Notes:
 //Stop when at search depth (i.e. edge of localMap)
 //Multiply heuristic cost by 1.01 to increase greediness? Won't break anything
+import battlecode.common.*;
 
 //TODO: Pass alloted bytecodes?
 
@@ -32,6 +41,7 @@ public class Navigator {
 	
 	Navigator(BaseRobot robot){
 		this.r = robot;
+		this.localMap = new int[mapSize][mapSize]; // automatically initialized to 0
 	}
 
 	public Direction moveTo(MapLocation dest){
@@ -52,7 +62,7 @@ public class Navigator {
 	private void updateMap(){
 		loc = r.rc.getLocation(); //## robot property? otherwise nav property? WTF is the bytecode cost anyway?
 
-		localMap = new int[mapSize][mapSize]; // automatically initialized to 0 (i.e. default value of int)
+		localMap = new int[mapSize][mapSize]; // automatically initialized to 0
 		MapLocation[] nearbyMines = r.rc.senseNonAlliedMineLocations(loc, mapDiagRSquared);
 		
 		for(MapLocation mine : nearbyMines){

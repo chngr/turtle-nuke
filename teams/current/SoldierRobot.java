@@ -3,6 +3,7 @@ package current;
 import battlecode.common.*;
 
 public class SoldierRobot extends BaseRobot {
+
 	
 	SoldierRobot(RobotController rc){
 		super(rc);

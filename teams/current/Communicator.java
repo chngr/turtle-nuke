@@ -6,6 +6,7 @@ Encapsulates all communications-related functions.
 
 Each robot has a unique offset in the frequency table that depends on the current round number.
 The [maxMsgQueueLen] consecutive channels starting at that offset is that robot's "inbox".
+This implements a naive frequency-hopping scheme.
 
 Each channel contains a 32-bit packet, containing:
 |Data byte 3| |Data byte 2| |Data byte 1| |Checksum + timestamp byte|
