@@ -9,11 +9,11 @@ import battlecode.common.RobotController;
 
 public class Communicator
 {
-	private RobotPlayer r;
+	private BaseRobot r;
 	private static final char expiryTime = 2;	// measured in number of rounds, including round on which msg is sent
 	private static final char maxMsgQueueLen = 20; // measured in number of channels, e.g. 20 len = 60 chars.
 	
-	Communicator(RobotPlayer robot)
+	Communicator(BaseRobot robot)
 	{
 		this.r = robot;
 	}
@@ -25,7 +25,7 @@ public class Communicator
 	// The set of messages beginning at 8175 is the "message queue starting at 8175".
 	public void send(int offset, char[] data, int datalen)
 	{
-		unsigned int packet;
+		int packet;
 		char c1, c2, c3;
 		for (int i = offset, c = 0; c < datalen; i++, c+=3)
 		{
@@ -49,32 +49,32 @@ public class Communicator
 	// Returns maxMsgQueueLen messages as an array of 3 * maxMsgQueueLen chars.
 	public char[] receive(int offset)
 	{
-		unsigned int packet, i = 0;
+		int packet, i = 0;
 		char[] data = new char [3 * maxMsgQueueLen];
 
 		while(isValidPacket(packet = r.rc.readBroadcast(freqtable[offset])))
 		{
 			packet >>= 8;	// First character (discarding checksum)
-			data[i++] = (packet & 0xFF);
+			data[i++] = (char)(packet & 0xFF);
 
 			packet >>= 8;	// Second character
-			data[i++] = (packet & 0xFF);
+			data[i++] = (char)(packet & 0xFF);
 			
 			packet >>= 8;	// Third character
-			data[i++] = (packet & 0xFF);
+			data[i++] = (char)(packet & 0xFF);
 
 			offset++;
 		}
 		return data;
 	}
 	
-	bool isValidPacket(unsigned int packet)
+	boolean isValidPacket(int packet)
 	{
-		char checksum = (packet & 0xFF);
+		char checksum = (char) (packet & 0xFF);
 		checksum ^= ((packet & 0xFF000000) >> 24);
 		checksum ^= ((packet & 0x00FF0000) >> 16);
-		checksum ^= ((packet & 0x0000FF00) >> 08);
-		return ((r.curRound & 0xFF) - checksum) < this.expiryTime);
+		checksum ^= ((packet & 0x0000FF00) >> 8);
+		return ((r.curRound & 0xFF) - checksum) < expiryTime;
 	}
 	
 	private static int[] freqtable = {
