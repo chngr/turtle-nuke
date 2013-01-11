@@ -4,8 +4,8 @@ import battlecode.common.Clock;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
-public class BaseRobot {
-	
+public class BaseRobot
+{
 	// Subsystems
 	public final RobotController rc;
 	public final Communicator comm;
@@ -13,8 +13,10 @@ public class BaseRobot {
 	// Robot data
 	public final RobotType myType;
 	public final int id = -1;
-	
 	public final int spawnRound;
+	
+	// State variables
+	public int curRound;
 
 	BaseRobot(RobotController rc){
 		this.rc = myRC;
@@ -26,5 +28,5 @@ public class BaseRobot {
 		this.myType = rc.getType();
 	}
 	
-
+	public abstract void run() throws GameActionException;
 }
