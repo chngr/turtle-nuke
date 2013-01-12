@@ -7,25 +7,34 @@ public class SimpleNavigator {
 	private BaseRobot r;
 
 	private int closestAttainedDist;
+	private int closestAttainedDistRoundNum;
 	private int mineCost = 6;
 	private MapLocation curLoc;
 	private Direction curHeadingDir;
 	
 	SimpleNavigator(BaseRobot robot){
 		this.r = robot;
+		closestAttainedDist = 99999999;
 	}
 	
 	public boolean moveTo(MapLocation goal){
 		curLoc = r.rc.getLocation();
 		if (curLoc.equals(goal))
+		{
+			closestAttainedDist = 99999999;
 			return Direction.OMNI;
+		}
 		
 		Direction optimalDir = curLoc.directionTo(goal);
 		int distToGoal = Utilities.getDistanceBetween(curLoc, goal);
 		if (distToGoal < closestAttainedDist)
+		{
 			closestAttainedDist = distToGoal;
+			closestAttainedDistRoundNum = Clock.getRoundNum();
+		}
 		else {
-			if (distToGoal - closestAttainedDist >= mineCost){
+			// Check if we've not made any progress towards the goal for a while.
+			if (distToGoal > closestAttainedDist && (Clock.getRounNum() - closestAttainedDistNum > mineCost)){
 				// We are getting frustrated. Will move in optimalDir no matter what.
 				curHeadingDir = optimalDir;
 				if (forceStep(optimalDir))
