@@ -4,21 +4,21 @@ import battlecode.common.*;
 
 public class HQRobot extends BaseRobot {
 
-	public int spawnTimeLeft;
-	public int curSpawnDelay; // change when upgrade suppliers
+  public int spawnTimeLeft;
+  public int curSpawnDelay; // change when upgrade suppliers
   private Upgrade[] upgrades = {Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
-	private int upgradeNumber = 0;
+  private int upgradeNumber = 0;
   private int timeSinceLastUpgrade = 0;
   private double upgradeThreshold = 0.0005;
 
-	HQRobot(RobotController rc){
-		super(rc);
-		spawnTimeLeft = 0;
-		curSpawnDelay = GameConstants.HQ_SPAWN_DELAY;
-	}
+  HQRobot(RobotController rc){
+    super(rc);
+    spawnTimeLeft = 0;
+    curSpawnDelay = GameConstants.HQ_SPAWN_DELAY;
+  }
 
-	public void run() throws GameActionException{
-		if (rc.isActive()){
+  public void run() throws GameActionException{
+    if (rc.isActive()){
       // Randomly decide when to upgrade based on thresholds
       double whatDo = Math.random();
       if(whatDo < upgradeThreshold * timeSinceLastUpgrade){
@@ -34,12 +34,12 @@ public class HQRobot extends BaseRobot {
       else{
         spawn();
       }
-		}
+    }
     // If inactive, check out when it is next active
     else {
-			spawnTimeLeft--;
-			rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
-		}
+      spawnTimeLeft--;
+      rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
+    }
     timeSinceLastUpgrade++;
   }
   private void spawn() throws GameActionException{

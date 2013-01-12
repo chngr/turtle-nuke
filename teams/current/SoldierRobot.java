@@ -10,13 +10,31 @@ public class SoldierRobot extends BaseRobot {
   public void run() throws GameActionException{
     if (rc.isActive()) {
       double whatDo = Math.random();
-      int numNearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 14, this.enemyTeam).length;
+      int numNearbyEnemies = rc.senseNearbyGameObjects(Robot.class, 24, this.enemyTeam).length;
+      int numNearbyFriends = rc.senseNearbyGameObjects(Robot.class, 24, this.myTeam).length;
+      int distHome = rc.getLocation().distanceSquaredTo(rc.senseHQLocation());
+      Direction directionToEncampment;
 
       // Check if there are enemies close by
-      if(numNearbyEnemies > 0)
+      if(numNearbyEnemies > 0 && numNearbyFriends > numNearbyEnemies)
         this.combat.fight();
+      // If outnumbered, retreat
+      else if(numNearbyEnemies > 0){
+        Direction dir = rc.getLocation().directionTo(rc.senseHQLocation());
+        if(rc.canMove(dir))
+          rc.move(dir);
+        else if(rc.canMove(dir.rotateLeft())){
+          rc.move(dir.rotateLeft());
+        }
+        else if(rc.canMove(dir.rotateRight())){
+          rc.move(dir.rotateRight());
+        }
+        else{
+          this.combat.fight();
+        }
+      }
       // First, lay mine with small chance
-      else if (whatDo < 0.05 && rc.senseMine(rc.getLocation()) == null)
+      else if (whatDo < 0.01 && rc.senseMine(rc.getLocation()) == null)
         rc.layMine();
       // Otherwise, move
       else {
@@ -27,7 +45,7 @@ public class SoldierRobot extends BaseRobot {
           dir = curLocation.directionTo(rc.senseHQLocation());
         }
         // Maybe head around randomly
-        else if(whatDo < 0.6){
+        else if(whatDo < 0.4){
           dir = Direction.values()[(int)(Math.random() * 8)];
         }
         // Otherwise go toward the enemy
@@ -36,20 +54,20 @@ public class SoldierRobot extends BaseRobot {
         }
         if(rc.canMove(dir)) {
           MapLocation target = curLocation.add(dir);
-	      if (util.senseHostileMine(target)) {
-	        // Usually stop in caution and hope for better next turn
-	        if (whatDo > 0.7) {
-	          // Sometimes defuse 
+        if (util.senseHostileMine(target)) {
+          // Usually stop in caution and hope for better next turn
+          if (whatDo > 0.2) {
+            // Sometimes defuse
               if (whatDo < 0.9) {
-	            rc.defuseMine(target);
-	          }
-	          // Or charge blindly 
-	          else {
-	        	rc.move(dir);
-	          }
-	        }
-	      }
-	      // No hostile mine
+              rc.defuseMine(target);
+            }
+            // Or charge blindly
+            else {
+            rc.move(dir);
+            }
+          }
+        }
+        // No hostile mine
           else {
             rc.move(dir);
           }
