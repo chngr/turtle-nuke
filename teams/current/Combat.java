@@ -2,85 +2,141 @@ package current;
 
 /**********************************
 Combat.java - Combat interface
+
+This module exports basic functionality for combat and fighting. The
+main method that this does export is
+
+    Combat.fight();
+
+which controls immediate combat maneuvering. All calculations and
+movement will be controlled purely by the Combat class through that
+function.
+
+Some methods to help control the behaviour of fighting shall e
+
+    Combat.setClumping(int clumpingFactor);
+    Combat.setAgression(int aggressionFactor);
+
+which allow one to set the tendency for robots to clump compared to
+tendency to engage enemy robots.
 **********************************/
 
-public class Combat{
-  private BaseRobot rc;
+import battlecode.common.*;
 
-  // Array of possible movement directions
-  // 0 - EAST, 1 - NONE, 2 - NORTH, 3 - NORTH_EAST, 4 - NORTH_WEST, 5 - SOUTH
-  // 6 - SOUTH_EAST, 7 - SOUTH-WEST, 8 - WEST
-  private static Directions[] moveDirs = [Direction.NORTH, Direction,NORTH_EAST,
-                                          Direction.EAST, Direction.SOUTH_EAST,
-                                          Direction.SOUTH, Direction.SOUTH_WEST,
-                                          Direction.WEST, Direction.NORTH_WEST]
+public class Combat{
+  private BaseRobot r;
+
+  // Hard-coded values for possible move directions
+  private Direction[][] moveDirs = {{Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST},
+                                    {Direction.WEST, Direction.NONE, Direction.EAST},
+                                    {Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST}};
+
+  // Local map for combat
+  private int[][] localMap = { {0, 0, 0, 0, 0},
+                               {0, 0, 0, 0, 0},
+                               {0, 0, 0, 0, 0},
+                               {0, 0, 0, 0, 0},
+                               {0, 0, 0, 0, 0}};
+
+  // Costs for moving adjacent to enemy or ally
+  private int allyAdjacentCost = 30;
+  private int enemyAdjacentCost = 60;
+  private int enemyTile = 1000;
+  private int allyTile = 500;
 
   Combat(BaseRobot robot){
-    this.rc = robot;
+    this.r = robot;
   }
 
-  public void formSquare(){
+  // Set the desire to clump together in combat
+  public void setClumping(int clumpingFactor){
+    allyAdjacentCost = clumpingFactor;
   }
 
-  public void squadMove(){
-    // If head, then move according to strategy
-    if(rc.squadID == rc.getRobot().getID())
-      rc.fight();
-    // Otherwise, squad member, so query squad channel for order
-    else{
-      int orders = rc.Communicator.receive(rc.squadID);
-    }
-  }
-  // Rotation based on the position of the robot
-  //      [2]
-  //  [1][0][2]
-  //     [1]
-  // The position is adjusted accordingly
-  public void squadRotate(){
-    int pos = rc.squadPos;
-    Directions[] rotateDirs = [Direction.NONE, Direction.NORTH_EAST, Direction.SOUTH_WEST];
-
-    // Check if able to move, then move accordingly
-    if(rc.canMove(rotateDirs[pos]))
-      rc.move[pos]
-
-    // Adjust position based on move
-    if(pos == 1)
-      rc.setSquadPos = 2;
-    else if(pos == 2)
-      rc.setSquadPos = 1;
+  // Set the desire to get near enemies
+  public void setAggression(int aggressionFactor){
+    enemyAdjacentCost = (int)((r.rc.getEnergon()/40.0) * aggressionFactor);
   }
 
-  private
+  // Basic combat method:
+  //
+  // SENSE & UPDATE MAP<-
+  //       |             |
+  // CALCULATE COSTS     |
+  //       |             |
+  // FIND MINIMAL MOVE---|
+  //
+  public void fight() throws GameActionException{
+    // Senses and populates local map
+    updateMap();
 
-  public void fight(){
-    // Get and process the list of robots, allied and enemy
-    Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class,16,rc.team().opponent());
-    Robot[] nearbyAllyRobots = rc.senseNearbyGameObjects(Robot.class, 16, rc.team());
-    int numEnemies = nearbyEnemyRobots.length;
-    int numFriends = nearbyAllyRobots.length;
+    // Calculate the cost for moving to an adjacent square
+    computeCosts();
 
-    MapLocation closestFriend = findClosestRobot(nearbyAllyRobots);
-    MapLocation closestEnemy = findClosestRobot(nearbyEnemyRobots);
-    // Figure out the best move
-    moveDirs = bestMove();
-  }
-
-  // Given an array of robots, finds the closest robot to self
-  private MapLocation findClosestRobot(Robot[] nearbyRobots){
-    int closestDistance = 100000;
-    MapLocation m;
-
-    for(Robot r : nearbyRobots){
-      RobotInfo ri = rc.senseRobotInfo(r);
-      int dist = rc.getLocation().distanceSquaredTo(ri.location());
-
-      if(dist < closestDistance){
-        m = ri.location();
-        closestDistance = dist;
+    // Find the adjacent square with the minimal cost
+    int cost = 1000;
+    Direction dir = Direction.NONE;
+    for(int i = 1; i < 4; i++){
+      for(int j = 1; j < 4; j++){
+        int localCost = localMap[i][j];
+        if(localCost < cost){
+          cost = localCost;
+          dir = moveDirs[i-1][j-1];
+        }
       }
     }
-    return m;
+    // If the best thing to do is not move, yield for now
+    if(dir == Direction.NONE)
+      r.rc.yield();
+    else if(r.rc.canMove(dir))
+      r.rc.move(dir);
+  }
+
+  // Senses for nearby robots and updates map accordingly
+  private void updateMap() throws GameActionException{
+    Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);
+    // Process nearby robots
+    for(Robot robot: nearbyRobots){
+      RobotInfo ri = r.rc.senseRobotInfo(robot);
+      int dx = r.rc.getLocation().x - ri.location.x;
+      int dy = r.rc.getLocation().y - ri.location.y;
+
+      // Check if within map
+      if(Math.abs(dx) < 3 && Math.abs(dy) < 3){
+        // Set the value of an occupied scared as + if team, - if enemy
+        localMap[2 + dx][2 + dy] = ri.team == r.rc.getTeam() ? allyTile : enemyTile;
+      }
+    }
+  }
+
+  // Based on sensed map, shall compute the cost for each move
+  // The idea would be to loop through the map, and if we see that there is
+  // an enemy/friend at a given location, then add a cost to adjacent squares
+  // in map.
+  //
+  // * Note very naive and would be well to think of better method
+  private void computeCosts(){
+    // Go through the map, and simply adjust adjacent squares
+    for(int i = 0; i < 5; i++){
+      for(int j = 0; j < 5; j++){
+        // See if there is something there
+        if(localMap[i][j] < 0){
+          // Check if enemy or friend
+          int adjacentCost = localMap[i][j] > 750 ? enemyAdjacentCost : allyAdjacentCost;
+
+          // Fill all adjacent squares
+          for(int x = -1; x < 2; x++){
+            if(i + x < 0 || i + x > 5)
+              continue;
+            for(int y = -1; y < 2; y++){
+              if(j + y < 0 || j + y > 5)
+                continue;
+              localMap[i][j] += adjacentCost;
+            }
+          }
+        }
+      }
+    }
   }
 
 }

@@ -6,9 +6,10 @@ public class BaseRobot
 {
 	// Subsystems
 	public final RobotController rc;
+	public final Utilities util;
 	public final Communicator comm;
 	public final Navigator nav;
-	public final Utilities util;
+	public final Combat combat;
 	
 	// State data
 	public final int maph, mapw;
@@ -18,6 +19,10 @@ public class BaseRobot
 	public final int spawnRound;
 	public final RobotType myType;
 	
+	// Team constants
+	public final Team myTeam;
+	public final Team enemyTeam;
+	
 	// State variables
 	public int curRound;
 	public MapLocation curLoc;
@@ -25,14 +30,19 @@ public class BaseRobot
 	BaseRobot(RobotController myRC){
 		// Initialize subsystems
 		this.rc = myRC;
+		this.util = new Utilities(this);
 		this.comm = new Communicator(this);
 		this.nav = new Navigator(this);
-		this.util = new Utilities(this);
+		this.combat = new Combat(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();
 		this.spawnRound = Clock.getRoundNum();
 		this.myType = rc.getType();
+		
+		// Initialize team objects
+		this.myTeam = rc.getTeam();
+		this.enemyTeam = myTeam.opponent();
 		
 		// Initialize state variables
 		this.maph = rc.getMapHeight();
