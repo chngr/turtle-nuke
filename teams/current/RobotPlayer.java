@@ -34,6 +34,7 @@ public class RobotPlayer {
             System.out.println("Shit happened!");
             e.printStackTrace();
             br.rc.addMatchObservation(e.toString());
+            br.rc.breakpoint();
 		}
 	}
 }
