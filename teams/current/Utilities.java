@@ -9,6 +9,8 @@ A collection of useful algorithms!
 
 */
 
+import battlecode.common.*;
+
 public class Utilities {
 	
 	private BaseRobot r;
@@ -25,9 +27,9 @@ public class Utilities {
 		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y));
 	}
 	
-	public void swap(<T>[] lst, int idx1, int idx2)
+	public <T> void swap(T[] lst, int idx1, int idx2)
 	{
-		<T> tmp = lst[idx1];
+		T tmp = lst[idx1];
 		lst[idx1] = lst[idx2];
 		lst[idx2] = tmp;
 	}
@@ -37,7 +39,7 @@ public class Utilities {
 		int dist;
 	}
 	
-	public RobotIdDistPair[] getNearestNRobots(int N, MapLocation c, int r2, Team t){
+	public RobotIdDistPair[] getNearestNRobots(int N, MapLocation c, int r2, Team t) throws GameActionException{
 		Robot[] robots = r.rc.senseNearbyGameObjects(Robot.class, c, r2, t);
 		int totalRobotNum = robots.length;
 		RobotIdDistPair[] rdPairs = new RobotIdDistPair[totalRobotNum];
@@ -57,16 +59,16 @@ public class Utilities {
 		
 		// Partition around idxPivot
 		RobotIdDistPair pivotVal = rdPairs[idxPivot];
-		swap(rdPairs[idxPivot], rdPairs[idxRight]);
+		swap(rdPairs, idxPivot, idxRight);
 		int idxCur = idxLeft;
 		for (int i = idxLeft; i < idxRight; i++){
 			if (rdPairs[i].dist < pivotVal.dist)
 			{
-				swap(rdPairs[i], rdPairs[idxCur]);
+				swap(rdPairs, i, idxCur);
 				idxCur++;
 			}
 		}
-		swap(rdPairs[idxCur], rdPairs[idxRight]);
+		swap(rdPairs, idxCur, idxRight);
 		
 		// Recurse on relevant sublist
 		_qsNearestNRobots(rdPairs, N, idxLeft, idxCur - 1);
