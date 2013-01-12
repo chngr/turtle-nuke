@@ -12,6 +12,11 @@ public class SoldierRobot extends BaseRobot {
 	public void run() throws GameActionException
 	{
 		if (rc.isActive()) {
+			char[] rcvMsg = comm.receive(comm.IDtoCurFreq(-1));
+			rc.setIndicatorString(0, Integer.toString(rcvMsg.length));
+			if (rcvMsg[0] == 'a')
+				rc.suicide();
+		
 			if (Math.random()<0.005) {
 				// Lay a mine
 				if(rc.senseMine(rc.getLocation())==null)

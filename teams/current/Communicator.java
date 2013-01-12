@@ -15,24 +15,28 @@ Each channel contains a 32-bit packet, containing:
 |Data byte 3| |Data byte 2| |Data byte 1| |Checksum + timestamp byte|
 where the checksum byte is calculated by xoring the data bytes with the current round number.
 
-A packet will expire in [expiryTime].
+Example (for posting to stickyspace):
+comm.receive(comm.IDtoCurFreq(-1)) receives data sent to the current round.
+comm.send(comm.IDtoNextFreq(-1), data, 3) sends 3 bytes of data to the next round.
+comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 90 rounds later.
 *************************************/
 
 import battlecode.common.*;
+import java.util.Arrays;
 
 public class Communicator
 {
 	private BaseRobot r;
 	
 	// These constansts have been carefully chosen, please do not change!
-	private static final int expiryTime = 2;
-		// measured in number of rounds, including round on which msg is sent
 	private static final int maxMsgQueueLen = 64;
 		// measured in number of channels, e.g. 4 len = 12 chars = 96 bits
 		// DO NOT SET THIS TO LARGER THAN 64, OTHERWISE CHANNELS WILL OVERLAP.
 	private static final int maxNewMsgsPerRound = 17;
 		// [maximum number of new messages] + 1 that a robot will receive per round.
-		// Should be smaller than maxMsgQueueLen / expiryTime
+		// Should be smaller than maxMsgQueueLen / 2
+		
+	private static final char magicChecksumVal = (char)0xB1;
 	
 	Communicator(BaseRobot robot)
 	{
@@ -48,20 +52,20 @@ public class Communicator
 	{
 		int packet;
 		char c1, c2, c3;
-		for (int i = freq, c = 0; c < datalen; i++, c+=3)
+		for (int i = freq, c = 0; c < datalen; i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS, c+=3)
 		{
 			// Find the next open spot in the message queue for a packet
 			while(isValidPacket(r.rc.readBroadcast(i)))
-				i++;
+				i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS;
 				
 			c1 = data[c];
-			c2 = (c+1 > datalen) ? 0xAA : data[c+1];	// do not change these padding values!
-			c3 = (c+2 > datalen) ? 0x55 : data[c+2];	// do not change these padding values!
+			c2 = (c+1 >= datalen) ? 0xAA : data[c+1];	// do not change these padding values!
+			c3 = (c+2 >= datalen) ? 0x55 : data[c+2];	// do not change these padding values!
 			
 			// Three data bytes (with MSB last to speed up receiving)
 			packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
 			// Add a checksum as the last byte
-			packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF);
+			packet |= c1 ^ c2 ^ c3 ^ ((r.curRound + 1) & 0xFF) ^ magicChecksumVal;
 			r.rc.broadcast(i, packet);
 		}
 	}
@@ -85,8 +89,9 @@ public class Communicator
 			data[i++] = (char)(packet & 0xFF);
 
 			freq++;
+			if (i == 3 * maxMsgQueueLen) break;
 		}
-		return data;
+		return Arrays.copyOfRange(data, 0, i+1);
 	}
 	
 	boolean isValidPacket(int packet)
@@ -96,11 +101,22 @@ public class Communicator
 		checksum ^= (char)((packet & 0xFF000000) >> 24);
 		checksum ^= (char)((packet & 0x00FF0000) >> 16);
 		checksum ^= (char)((packet & 0x0000FF00) >> 8);
-		return ((char)(r.curRound & 0xFF) - checksum) < expiryTime;
+		checksum ^= (char)(r.curRound & 0xFF);
+		return (checksum == magicChecksumVal);
 	}
 	
-	public int IDtoFreq(int id)
+	public int IDtoCurFreq(int id)
 	{
-		return (maxMsgQueueLen * id - maxNewMsgsPerRound * r.curRound) % GameConstants.BROADCAST_MAX_CHANNELS;
+		return IDtoFreqNRoundsLater(id, 0);
+	}
+	public int IDtoNextFreq(int id)
+	{
+		return IDtoFreqNRoundsLater(id, 1);
+	}
+	public int IDtoFreqNRoundsLater(int id, int roundOffset)
+	{
+		int tmp = maxMsgQueueLen * id - maxNewMsgsPerRound * (r.curRound + roundOffset);
+		if (tmp < 0) tmp += GameConstants.BROADCAST_MAX_CHANNELS;
+		return tmp % GameConstants.BROADCAST_MAX_CHANNELS;
 	}
 }

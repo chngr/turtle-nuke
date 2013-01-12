@@ -51,5 +51,10 @@ public class HQRobot extends BaseRobot {
 			spawnTimeLeft--;
 			rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
 		}
+		if (curRound % 24 == 0)
+		{
+			char[] testmsg = {'a'};
+			comm.send(comm.IDtoNextFreq(-1), testmsg, 1);
+		}
 	}
 }
