@@ -53,12 +53,12 @@ public class Combat{
     computeCosts();
 
     // Find the adjacent square with the minimal cost
-    int cost = 0;
+    int cost = 1000;
     Direction dir = Direction.NONE;
     for(int i = 1; i < 4; i++){
       for(int j = 1; j < 4; j++){
         int localCost = localMap[i][j];
-        if(localCost > cost){
+        if(localCost < cost){
           cost = localCost;
           dir = moveDirs[i-1][j-1];
         }
