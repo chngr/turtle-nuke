@@ -27,8 +27,24 @@ import battlecode.common.*;
 //TODO:@5 danger and impatience state variables; will need to replan path when they change
 //TODO: stagger map update and search (update centered on next square)?
 
+//Infinite loop debugging:
+// 	private int debugCounter = 0; //DEBUG
+//	r.rc.setIndicatorString(0,Clock.getRoundNum()+";"+r.id +": "+ debugCounter++); //DEBUG
+
+
 public class Navigator {
 	
+	private static final Direction[] DIRECTIONS = {
+		Direction.NORTH,
+		Direction.NORTH_EAST,
+		Direction.EAST,
+		Direction.SOUTH_EAST,
+		Direction.SOUTH,
+		Direction.SOUTH_WEST,
+		Direction.WEST,
+		Direction.NORTH_WEST
+	}; //?
+		
 	private BaseRobot r;
 	
 
@@ -41,7 +57,7 @@ public class Navigator {
 	private int searchFreq = 3; // Needs to be <= searchDepth
 	
 	//# may need to be private with getter/setter, other things might change with it
-	public int mineCost = searchDepth-1; //?
+	public int mineCost = 100; //?
 	
 	
 	private MapLocation loc;
@@ -60,31 +76,32 @@ public class Navigator {
 	private MapLocation currentDest;
 
 	public Direction moveTo(MapLocation dest) throws GameActionException{
-		
-		if(!dest.equals(currentDest) || (searchTimer %= searchFreq) == 0){
-			updateMap();
+		if(r.rc.isActive()){
+			if(!dest.equals(currentDest) || (searchTimer %= searchFreq) == 0){
+				updateMap();
+				
+				currentDest = dest;
+				pathIdx = 0;
+				
+				path = search(dest);
+			}
 			
-			currentDest = dest;
-			pathIdx = 0;
-			
-			path = search(dest);
+			if(path[pathIdx] == null) {
+				return Direction.OMNI; // at destination
+			}
+			else if(!takeStep(path[pathIdx])){	//## handle failed move. re-search?
+				return null; // move failed
+			} else {
+				return path[pathIdx];
+			}
 		}
-		
-		searchTimer++;
-		if(!takeStep(path[pathIdx++])){	//## is right? re-search if failed to move?
-			pathIdx--; //# temporary way of handling failed move, improve this
-			return Direction.NONE; // move failed
-		} else if(path[pathIdx] == null) {
-			return Direction.OMNI; // at destination
-		} else {
-			return path[pathIdx];
-		}
-
+		return Direction.NONE; //?
 	}
 	
 	
 	// Returns success of movement
-	public boolean takeStep(Direction dir) throws GameActionException{
+	public boolean takeStep(Direction dir) throws GameActionException {
+
 		if(r.rc.canMove(dir)){
 			MapLocation dest = r.rc.getLocation().add(dir);
 			//#check diffuseMines var first
@@ -94,6 +111,8 @@ public class Navigator {
 			}
 			else{
 				r.rc.move(dir);
+				pathIdx++;
+				searchTimer++;
 			}
 			return true;
 		}
@@ -143,18 +162,21 @@ public class Navigator {
 		
 		LocationQueue frontier = new LocationQueue(mapSize*mapSize);
 		frontier.add(new QueueElement());
+		visited[offset][offset] = true;
 		
 		QueueElement cur;
 		int[] newLoc;
 		int edgeCost, heuristic;
 		while(true){
+
 			cur = frontier.poll();
 			if(idxDistance(cur.idx) == searchDepth || cur.pathLength == maxPathLength){ // is this the best way to limit pathlength?
 				return cur.path;
 			}
-			for(Direction d : Direction.values()){
-				newLoc = new int[]{cur.idx[0]+d.dx, cur.idx[1]+d.dx}; //##does this work?
+			for(Direction d : DIRECTIONS){
+				newLoc = new int[]{cur.idx[0]+d.dx, cur.idx[1]+d.dy}; //##does this work?
 				if(!visited[newLoc[0]][newLoc[1]]){
+					
 					heuristic = chessDistance(idxToLoc(newLoc), goal);
 					if(heuristic == 0) {
 						Direction[] goalPath = cur.path;
@@ -192,8 +214,7 @@ public class Navigator {
 			System.arraycopy(base.path, 0, path, 0, pathLength);
 			path[pathLength++] = dir;
 			
-			idx[0] = base.idx[0] + dir.dx;
-			idx[1] = base.idx[1] + dir.dy;
+			idx = new int[] { base.idx[0] + dir.dx, base.idx[1] + dir.dy};
 			cost = base.cost + edgeCost;
 			priority = cost + heuristic;
 		}
@@ -202,6 +223,8 @@ public class Navigator {
 	// ##not locations, rename
 	// Using fixed types for now because generics + arrays is awful
 	class LocationQueue {
+		
+		private static final int INF = 10000;
 		
 		private QueueElement[] queue;
 		private int end = 0;
@@ -233,23 +256,23 @@ public class Navigator {
 			int curNode = 1, 
 				l = 2,
 				r = 3,
-				lp = (l > end) ? 0 : queue[l].priority,
-				rp = (r > end) ? 0 : queue[r].priority;
+				lp = (l > end) ? INF : queue[l].priority,
+				rp = (r > end) ? INF : queue[r].priority;
 			int child;
 			QueueElement tmp;
 			while(queue[curNode].priority > lp || queue[curNode].priority > rp){
 				
-				child = queue[l].priority < queue[r].priority ? l : r;
+				child = lp < rp ? l : r;
 				
 				tmp = queue[curNode];
 				queue[curNode] = queue[child];
 				queue[child] = tmp;
 				
 				curNode = child;
-				l = child >> 1;
+				l = child << 1;
 				r = l + 1;
-				lp = (l > end) ? 0 : queue[l].priority;
-				rp = (r > end) ? 0 : queue[r].priority;
+				lp = (l > end) ? INF : queue[l].priority;
+				rp = (r > end) ? INF : queue[r].priority;
 			}
 			
 			return min;
