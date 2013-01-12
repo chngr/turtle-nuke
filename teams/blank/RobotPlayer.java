@@ -16,30 +16,40 @@ public class RobotPlayer {
 						Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 						if (rc.canMove(dir))
 							rc.spawn(dir);
-            // Tries to spawn, otherwise shall research instead
-            else{
-              Upgrade[] upgrades = {Upgrade.DEFUSION, Upgrade.FUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
-              for(int i = 0; i < 5; i++){
-                if(rc.hasUpgrade(upgrades[i]))
-                  continue;
-                else
-                  rc.researchUpgrade(upgrades[i]);
-              }
-            }
+						// Tries to spawn, otherwise shall research instead
+						else {
+							Upgrade[] upgrades = {Upgrade.DEFUSION, Upgrade.FUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
+							for(int i = 0; i < 5; i++){
+								if(rc.hasUpgrade(upgrades[i]))
+									continue;
+								else {
+									rc.researchUpgrade(upgrades[i]);
+									break;
+								}
+							}
+						}
+						
 					}
 				} else if (rc.getType() == RobotType.SOLDIER) {
-            SimpleNavigator nav = new SimpleNavigator(rc);
-            Combat fighter = new Combat(rc);
-            Robot[] enemies = rc.senseNearbyGameObjects(Robot.class, 24, rc.getTeam().opponent());
-            if(enemies.length > 0)
-              fighter.fight();
-            else
-              nav.moveTo(rc.senseEnemyHQLocation());
-            rc.yield();
-          }
-      }
-			 catch (Exception e) {
+					if (rc.isActive()) {
+						SimpleNavigator nav = new SimpleNavigator(rc);
+						Combat fighter = new Combat(rc);
+						Robot[] enemies = rc.senseNearbyGameObjects(Robot.class, 24, rc.getTeam().opponent());
+						if(enemies.length > 0)
+							fighter.fight();
+						else
+							nav.moveTo(rc.senseEnemyHQLocation());
+					} else {
+						// Inactive logic (ie precomputation and broadcasting)
+					}
+				}
+				
+				// end turn (regardless of type)
+				rc.yield();
+			}
+			catch (Exception e) {
 				e.printStackTrace();
+				rc.breakpoint();
 			}
 		}
 	}

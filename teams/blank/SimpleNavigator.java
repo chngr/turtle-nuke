@@ -29,7 +29,7 @@ public class SimpleNavigator {
 		}
 
 		Direction optimalDir = curLoc.directionTo(goal);
-    return forceStep(optimalDir);
+		return forceStep(optimalDir);
 	}
 
 	public boolean takeSafeRelevantStep(Direction optimalDir, Direction avoidDir) throws GameActionException
@@ -58,13 +58,14 @@ public class SimpleNavigator {
 		return false;
 	}
 
+	// Produces true if robot moves or defuses
 	public boolean forceStep(Direction dir) throws GameActionException {
 		int safeStepRes = takeSafeStep(dir);
 		if (safeStepRes == 0)
 			return true;
 		else if (safeStepRes == 1){
 			if (forceStepOntoMine(dir, true))
-				return true;
+				return true; // Possibly defusing
 		}
 		return false;
 	}
@@ -89,8 +90,10 @@ public class SimpleNavigator {
 
 	public boolean forceStepOntoMine(Direction dir, boolean doDefuse) throws GameActionException {
 		if (r.canMove(dir)){
-			if (doDefuse)
+			if (doDefuse) {
 				r.defuseMine(curLoc.add(dir));
+				return true;
+			}
 			r.move(dir);
 			return true;
 		} else

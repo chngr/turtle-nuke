@@ -75,6 +75,8 @@ public class SimpleNavigator {
 		return false;
 	}
 	
+	
+	// Returns true if robot moves or defuses
 	public boolean forceStep(Direction dir) throws GameActionException {
 		int safeStepRes = takeSafeStep(dir);
 		if (safeStepRes == 0)
@@ -106,8 +108,10 @@ public class SimpleNavigator {
 	
 	public boolean forceStepOntoMine(Direction dir, boolean doDefuse) throws GameActionException {
 		if (r.rc.canMove(dir)){
-			if (doDefuse)
+			if (doDefuse) {
 				r.rc.defuseMine(curLoc.add(dir));
+				return true;
+			}
 			r.rc.move(dir);
 			return true;
 		} else

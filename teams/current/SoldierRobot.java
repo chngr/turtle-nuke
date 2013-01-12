@@ -75,6 +75,8 @@ public class SoldierRobot extends BaseRobot {
       }
     }
 
+    // Logic shared by active and inactive
+    // Do not move, defuse, mine, or capture
     if (Math.random()<0.01 && rc.getTeamPower()>5) {
       // Write the number 5 to a position on the message board corresponding to the robot's ID
       rc.broadcast(rc.getRobot().getID()%GameConstants.BROADCAST_MAX_CHANNELS, 5);
