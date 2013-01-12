@@ -52,7 +52,7 @@ public class Navigator {
 	private int mapDiagRSquared = 2*searchDepth*searchDepth;
 	private int mapSize = 4*searchDepth+1; // Needs to be >= 2*floor(sqrt(2)*searchDepth)+1
 	private int offset = (mapSize-1)/2;
-	private int maxPathLength = mapSize; //?
+	private int maxPathLength = 6; //? //#
 	
 	private int searchFreq = 3; // Needs to be <= searchDepth
 	
@@ -121,7 +121,7 @@ public class Navigator {
 	
 	//## switch to utility version?
 	public int chessDistance(MapLocation loc1, MapLocation loc2){
-		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y));
+		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y)); //Efficiency: ifs are probably faster
 	}
 	private int idxDistance(int[] idxs){
 		return Math.max(Math.abs(idxs[0] - offset), Math.abs(idxs[1] - offset));
