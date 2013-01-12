@@ -101,6 +101,6 @@ public class Communicator
 	
 	public int IDtoFreq(int id)
 	{
-		return (maxMsgQueueLen * id + maxNewMsgsPerRound * r.curRound) % GameConstants.BROADCAST_MAX_CHANNELS;
+		return (maxMsgQueueLen * id - maxNewMsgsPerRound * r.curRound) % GameConstants.BROADCAST_MAX_CHANNELS;
 	}
 }
