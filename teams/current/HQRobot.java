@@ -9,7 +9,7 @@ public class HQRobot extends BaseRobot {
   private Upgrade[] upgrades = {Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
 	private int upgradeNumber = 0;
   private int timeSinceLastUpgrade = 0;
-  private double upgradeThreshhold = 0.05;
+  private double upgradeThreshold = 0.0005;
 
 	HQRobot(RobotController rc){
 		super(rc);
@@ -42,13 +42,13 @@ public class HQRobot extends BaseRobot {
 		}
     timeSinceLastUpgrade++;
   }
-  private void spawn(){
+  private void spawn() throws GameActionException{
     // Spawn a soldier
     Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 
     // Spawns soldier if possible to move
     if (rc.canMove(dir)) {
-      spawnDir(dir);
+      spawnInDir(dir);
     }
     // Try to move around to spawn in different direction
     else {
@@ -58,13 +58,13 @@ public class HQRobot extends BaseRobot {
       while (dirRight != dirLeft) {
         dirLeft = dirLeft.rotateLeft();
         if (rc.canMove(dirLeft)) {
-          spawnDir(dirLeft);
+          spawnInDir(dirLeft);
           break;
         }
         else {
           dirRight = dirRight.rotateRight();
           if (rc.canMove(dirRight)) {
-            spawnDir(dirRight);
+            spawnInDir(dirRight);
             break;
           }
         }
@@ -72,7 +72,7 @@ public class HQRobot extends BaseRobot {
     }
   }
 
-  private void spawnInDir(Direction dir){
+  private void spawnInDir(Direction dir) throws GameActionException{
     rc.spawn(dir);
     spawnTimeLeft = curSpawnDelay;
     rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
