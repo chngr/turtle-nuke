@@ -21,9 +21,10 @@ public class SoldierRobot extends BaseRobot {
       // Otherwise, move
       else {
         Direction dir;
+        MapLocation curLocation = rc.getLocation();
         // First, see if chance wills us to go home
         if(whatDo < 0.2){
-          dir = rc.getLocation().directionTo(rc.senseHQLocation());
+          dir = curLocation.directionTo(rc.senseHQLocation());
         }
         // Maybe head around randomly
         else if(whatDo < 0.6){
@@ -31,10 +32,27 @@ public class SoldierRobot extends BaseRobot {
         }
         // Otherwise go toward the enemy
         else{
-          dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+          dir = curLocation.directionTo(rc.senseEnemyHQLocation());
         }
         if(rc.canMove(dir)) {
-          rc.move(dir);
+          MapLocation target = curLocation.add(dir);
+	      if (util.senseHostileMine(target)) {
+	        // Usually stop in caution and hope for better next turn
+	        if (whatDo > 0.7) {
+	          // Sometimes defuse 
+              if (whatDo < 0.9) {
+	            rc.defuseMine(target);
+	          }
+	          // Or charge blindly 
+	          else {
+	        	rc.move(dir);
+	          }
+	        }
+	      }
+	      // No hostile mine
+          else {
+            rc.move(dir);
+          }
         }
       }
     }
@@ -44,5 +62,4 @@ public class SoldierRobot extends BaseRobot {
       rc.broadcast(rc.getRobot().getID()%GameConstants.BROADCAST_MAX_CHANNELS, 5);
     }
   }
-
 }
