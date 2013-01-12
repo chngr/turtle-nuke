@@ -36,6 +36,7 @@ public class Combat{
     this.rc = robot;
   }
 
+
   // Basic combat method:
   //
   // SENSE & UPDATE MAP<-
@@ -57,7 +58,7 @@ public class Combat{
     for(int i = 1; i < 4; i++){
       for(int j = 1; j < 4; j++){
         int localCost = localMap[i][j];
-        if(localCost < cost){
+        if(localCost > cost){
           cost = localCost;
           dir = moveDirs[i-1][j-1];
         }
