@@ -75,4 +75,9 @@ public class Utilities {
 		if (idxCur < idxLeft + N)
 			_qsNearestNRobots(rdPairs, N - (idxCur - idxLeft) - 1, idxCur + 1, idxRight);
 	}
+	
+	public boolean senseHostileMine(MapLocation location) {
+		Team mine_team = r.rc.senseMine(location);
+		return !(mine_team == null || mine_team == r.myTeam);
+	}
 }

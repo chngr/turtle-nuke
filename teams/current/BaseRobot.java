@@ -18,6 +18,10 @@ public class BaseRobot
 	public final int spawnRound;
 	public final RobotType myType;
 	
+	// Team constants
+	public final Team myTeam;
+	public final Team enemyTeam;
+	
 	// State variables
 	public int curRound;
 	public MapLocation curLoc;
@@ -33,6 +37,10 @@ public class BaseRobot
 		this.id = rc.getRobot().getID();
 		this.spawnRound = Clock.getRoundNum();
 		this.myType = rc.getType();
+		
+		// Initialize team objects
+		this.myTeam = rc.getTeam();
+		this.enemyTeam = myTeam.opponent();
 		
 		// Initialize state variables
 		this.maph = rc.getMapHeight();
