@@ -38,4 +38,5 @@ public class BaseRobot
 	public void run() throws GameActionException{
 		this.curLoc = rc.getLocation();
 	}
+
 }
