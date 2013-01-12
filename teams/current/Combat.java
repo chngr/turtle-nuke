@@ -87,7 +87,7 @@ public class Combat{
     }
     // If the best thing to do is not move, yield for now
     if(dir == Direction.NONE)
-      r.rc.yield();
+      return;
     else if(r.rc.canMove(dir))
       r.rc.move(dir);
   }
