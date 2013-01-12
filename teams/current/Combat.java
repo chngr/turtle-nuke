@@ -3,12 +3,22 @@ package current;
 /**********************************
 Combat.java - Combat interface
 
-The basic logic exports only the function
+This module exports basic functionality for combat and fighting. The
+main method that this does export is
 
     Combat.fight();
 
-that controls everything based on a simple
-local cost calculation.
+which controls immediate combat maneuvering. All calculations and
+movement will be controlled purely by the Combat class through that
+function.
+
+Some methods to help control the behaviour of fighting shall e
+
+    Combat.setClumping(int clumpingFactor);
+    Combat.setAgression(int aggressionFactor);
+
+which allow one to set the tendency for robots to clump compared to
+tendency to engage enemy robots.
 **********************************/
 
 public class Combat{
@@ -36,6 +46,15 @@ public class Combat{
     this.rc = robot;
   }
 
+  // Set the desire to clump together in combat
+  public void setClumping(int clumpingFactor){
+    allyAdjacentCost = clumpingFactor;
+  }
+
+  // Set the desire to get near enemies
+  public void setAggression(int aggressionFactor){
+    enemyAdjacentCost = (int)((rc.getEnergon/40.0) * aggressionFactor);
+  }
 
   // Basic combat method:
   //
