@@ -3,7 +3,7 @@ package current;
 import battlecode.common.*;
 
 public class SimpleNavigator {
-	
+
 	private BaseRobot r;
 
 	private int closestAttainedDist;
@@ -17,16 +17,16 @@ public class SimpleNavigator {
 		closestAttainedDist = 99999999;
 	}
 	
-	public boolean moveTo(MapLocation goal){
+	public boolean moveTo(MapLocation goal) throws GameActionException {
 		curLoc = r.rc.getLocation();
 		if (curLoc.equals(goal))
 		{
 			closestAttainedDist = 99999999;
-			return Direction.OMNI;
+			return false;
 		}
 		
 		Direction optimalDir = curLoc.directionTo(goal);
-		int distToGoal = Utilities.getDistanceBetween(curLoc, goal);
+		int distToGoal = r.util.getDistanceBetween(curLoc, goal);
 		if (distToGoal < closestAttainedDist)
 		{
 			closestAttainedDist = distToGoal;
@@ -34,7 +34,7 @@ public class SimpleNavigator {
 		}
 		else {
 			// Check if we've not made any progress towards the goal for a while.
-			if (distToGoal > closestAttainedDist && (Clock.getRounNum() - closestAttainedDistNum > mineCost)){
+			if (distToGoal > closestAttainedDist && (Clock.getRoundNum() - closestAttainedDistRoundNum > mineCost)){
 				// We are getting frustrated. Will move in optimalDir no matter what.
 				curHeadingDir = optimalDir;
 				if (forceStep(optimalDir))
@@ -49,7 +49,7 @@ public class SimpleNavigator {
 		return takeSafeRelevantStep(optimalDir, curHeadingDir);
 	}
 	
-	public boolean takeSafeRelevantStep(Direction optimalDir, Direction avoidDir)
+	public boolean takeSafeRelevantStep(Direction optimalDir, Direction avoidDir) throws GameActionException 
 	{		
 		Direction dir1 = optimalDir;
 		Direction dir2 = optimalDir.rotateRight();
