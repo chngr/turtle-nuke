@@ -34,7 +34,7 @@ int main()
     outputfile << "\t};\n";
 
     outputfile << "\tprivate static final int stickyfreqtable = {";
-    for (int i = 0; i < 2500; i++)
+    for (int i = 0; i < 1200; i++)
     {
         if (i % 100 == 0)
             outputfile << "\n\t\t";
