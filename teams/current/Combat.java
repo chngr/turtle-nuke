@@ -21,13 +21,15 @@ which allow one to set the tendency for robots to clump compared to
 tendency to engage enemy robots.
 **********************************/
 
+import battlecode.common.*;
+
 public class Combat{
-  private BaseRobot rc;
+  private BaseRobot r;
 
   // Hard-coded values for possible move directions
   private Direction[][] moveDirs = {{Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST},
                                     {Direction.WEST, Direction.NONE, Direction.EAST},
-                                    {Direciton.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST}};
+                                    {Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST}};
 
   // Local map for combat
   private int[][] localMap = { {0, 0, 0, 0, 0},
@@ -43,7 +45,7 @@ public class Combat{
   private int allyTile = 500;
 
   Combat(BaseRobot robot){
-    this.rc = robot;
+    this.r = robot;
   }
 
   // Set the desire to clump together in combat
@@ -53,7 +55,7 @@ public class Combat{
 
   // Set the desire to get near enemies
   public void setAggression(int aggressionFactor){
-    enemyAdjacentCost = (int)((rc.getEnergon/40.0) * aggressionFactor);
+    enemyAdjacentCost = (int)((r.rc.getEnergon()/40.0) * aggressionFactor);
   }
 
   // Basic combat method:
@@ -85,24 +87,24 @@ public class Combat{
     }
     // If the best thing to do is not move, yield for now
     if(dir == Direction.NONE)
-      rc.yield();
-    else if(rc.canMove(dir))
-      rc.move(dir);
+      r.rc.yield();
+    else if(r.rc.canMove(dir))
+      r.rc.move(dir);
   }
 
   // Senses for nearby robots and updates map accordingly
   private void updateMap() throws GameActionException{
-    Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class, 14);
+    Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);
     // Process nearby robots
-    for(Robot r: nearbyRobots){
-      RobotInfo ri = rc.senseRobotInfo(r);
-      int dx = rc.getLocation().x - ri.location.x;
-      int dy = rc.getLocation().y - ri.location.y;
+    for(Robot robot: nearbyRobots){
+      RobotInfo ri = r.rc.senseRobotInfo(robot);
+      int dx = r.rc.getLocation().x - ri.location.x;
+      int dy = r.rc.getLocation().y - ri.location.y;
 
       // Check if within map
       if(Math.abs(dx) < 3 && Math.abs(dy) < 3){
         // Set the value of an occupied scared as + if team, - if enemy
-        localMap[2 + dx][2 + dy] = ri.team == rc.getTeam() ? allyTile : enemyTile;
+        localMap[2 + dx][2 + dy] = ri.team == r.rc.getTeam() ? allyTile : enemyTile;
       }
     }
   }

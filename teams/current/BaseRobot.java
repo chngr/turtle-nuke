@@ -6,9 +6,10 @@ public class BaseRobot
 {
 	// Subsystems
 	public final RobotController rc;
+	public final Utilities util;
 	public final Communicator comm;
 	public final Navigator nav;
-	public final Utilities util;
+	public final Combat combat;
 	
 	// State data
 	public final int maph, mapw;
@@ -29,9 +30,10 @@ public class BaseRobot
 	BaseRobot(RobotController myRC){
 		// Initialize subsystems
 		this.rc = myRC;
+		this.util = new Utilities(this);
 		this.comm = new Communicator(this);
 		this.nav = new Navigator(this);
-		this.util = new Utilities(this);
+		this.combat = new Combat(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();

@@ -44,14 +44,14 @@ public class Communicator
 	// If datalen > 2, remaining bytes will be written to successive freqtable channels
 	// e.g. send(2, "hello", 5) will write to channels 8175, 1867, 5264.
 	// The set of messages beginning at 8175 is the "message queue starting at 8175".
-	public void send(int freq, char[] data, int datalen, boolean isSticky) throws GameActionException
+	public void send(int freq, char[] data, int datalen) throws GameActionException
 	{
 		int packet;
 		char c1, c2, c3;
-		for (int i = offset, c = 0; c < datalen; i++, c+=3)
+		for (int i = freq, c = 0; c < datalen; i++, c+=3)
 		{
 			// Find the next open spot in the message queue for a packet
-			while(isValidPacket(r.rc.readBroadcast(freqtable[i])))
+			while(isValidPacket(r.rc.readBroadcast(i)))
 				i++;
 				
 			c1 = data[c];
@@ -62,13 +62,13 @@ public class Communicator
 			packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
 			// Add a checksum as the last byte
 			packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF);
-			r.rc.broadcast(freq, packet);
+			r.rc.broadcast(i, packet);
 		}
 	}
 	
 	// Reads all valid messages in the message queue starting at channel freqtable[offset]
 	// Returns maxMsgQueueLen messages as an array of 3 * maxMsgQueueLen chars.
-	public char[] receive(int offset, boolean isSticky) throws GameActionException
+	public char[] receive(int freq) throws GameActionException
 	{
 		int packet, i = 0;
 		char[] data = new char [3 * maxMsgQueueLen];
@@ -84,7 +84,7 @@ public class Communicator
 			packet >>= 8;	// Third character
 			data[i++] = (char)(packet & 0xFF);
 
-			offset++;
+			freq++;
 		}
 		return data;
 	}

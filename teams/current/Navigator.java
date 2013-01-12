@@ -31,27 +31,36 @@ public class Navigator {
 	
 	private BaseRobot r;
 	
-
-	private int searchDepth = 5; //?
-	private int mapDiagRSquared = 2*searchDepth*searchDepth;
-	private int mapSize = 4*searchDepth+1; // Needs to be >= 2*floor(sqrt(2)*searchDepth)+1
-	private int offset = (mapSize-1)/2;
-	private int maxPathLength = mapSize; //?
-	
-	private int searchFreq = 3; // Needs to be <= searchDepth
-	
+	// Navigator parameters
+	private int searchDepth; //?
+	private int mapDiagRSquared;
+	private int mapSize; // Needs to be >= 2*floor(sqrt(2)*searchDepth)+1
+	private int offset;
+	private int maxPathLength; //?
+	private int searchFreq; // Needs to be <= searchDepth
 	//# may need to be private with getter/setter, other things might change with it
-	public int mineCost = searchDepth-1; //?
-	
+	public int mineCost; //?
 	
 	private MapLocation loc;
-	
 	private int[][] localMap;
-	
 	
 	Navigator(BaseRobot robot){
 		this.r = robot;
+		setNavigatorParams(5);
+		
 		this.localMap = new int[mapSize][mapSize]; // automatically initialized to 0
+	}
+	
+	public void setNavigatorParams(int searchDepth)
+	{
+		this.searchDepth = searchDepth;
+		mapDiagRSquared = 2 * searchDepth * searchDepth;
+		mapSize = 4 * searchDepth + 1;
+		offset = (mapSize - 1) / 2;
+		maxPathLength = mapSize;
+		
+		searchFreq = searchDepth - 2;
+		mineCost = searchDepth - 1;
 	}
 	
 	private Direction[] path;
