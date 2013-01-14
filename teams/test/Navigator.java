@@ -1,4 +1,6 @@
-package current;
+package test;
+
+import java.util.Arrays; //DEBUG
 
 /*************************************
 Navigator.java - Navigation interfaces
@@ -33,7 +35,7 @@ import battlecode.common.*;
 
 
 public class Navigator {
-	
+	private int debugCounter = 0; //DEBUG
 	private static final Direction[] DIRECTIONS = {
 		Direction.NORTH,
 		Direction.NORTH_EAST,
@@ -52,12 +54,12 @@ public class Navigator {
 	private int mapDiagRSquared = 2*searchDepth*searchDepth;
 	private int mapSize = 4*searchDepth+1; // Needs to be >= 2*floor(sqrt(2)*searchDepth)+1
 	private int offset = (mapSize-1)/2;
-	private int maxPathLength = 6; //? //#
+	private int maxPathLength = mapSize; //?
 	
 	private int searchFreq = 3; // Needs to be <= searchDepth
 	
 	//# may need to be private with getter/setter, other things might change with it
-	public int mineCost = 100; //?
+	public int mineCost = searchDepth-1; //?
 	
 	
 	private MapLocation loc;
@@ -89,18 +91,34 @@ public class Navigator {
 			if(path[pathIdx] == null) {
 				return Direction.OMNI; // at destination
 			}
-			else if(!takeStep(path[pathIdx])){	//## handle failed move. re-search?
-				return null; // move failed
-			} else {
-				return path[pathIdx];
+			else {
+				switch (takeStep(path[pathIdx])){
+					case 0:
+						pathIdx++;
+						searchTimer++;
+					case 1:
+						return path[pathIdx];
+					case 2:
+						adjustStep();
+						return null;
+				}
 			}
+
 		}
 		return Direction.NONE; //?
 	}
 	
 	
-	// Returns success of movement
-	public boolean takeStep(Direction dir) throws GameActionException {
+	private void adjustStep() throws GameActionException {path[pathIdx].rotateRight();
+		if(takeStep(path[pathIdx].rotateRight()) == 2){
+			takeStep(path[pathIdx].rotateLeft());	
+		}
+		searchTimer = 0;
+	}
+
+
+	// Returns 0: moved;  1: defused  2: failed
+	public int takeStep(Direction dir) throws GameActionException {
 
 		if(r.rc.canMove(dir)){
 			MapLocation dest = r.rc.getLocation().add(dir);
@@ -108,20 +126,19 @@ public class Navigator {
 			Team mine = r.rc.senseMine(dest);
 			if(mine == Team.NEUTRAL || mine == r.rc.getTeam().opponent()){
 				r.rc.defuseMine(r.rc.getLocation().add(dir));
+				return 1;
 			}
 			else{
 				r.rc.move(dir);
-				pathIdx++;
-				searchTimer++;
+				return 0;
 			}
-			return true;
 		}
-		return false;
+		return 2;
 	}
 	
 	//## switch to utility version?
 	public int chessDistance(MapLocation loc1, MapLocation loc2){
-		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y)); //Efficiency: ifs are probably faster
+		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y));
 	}
 	private int idxDistance(int[] idxs){
 		return Math.max(Math.abs(idxs[0] - offset), Math.abs(idxs[1] - offset));
@@ -163,20 +180,21 @@ public class Navigator {
 		LocationQueue frontier = new LocationQueue(mapSize*mapSize);
 		frontier.add(new QueueElement());
 		visited[offset][offset] = true;
-		
+
 		QueueElement cur;
 		int[] newLoc;
 		int edgeCost, heuristic;
 		while(true){
-
+			//r.rc.setIndicatorString(0,Clock.getRoundNum()+";"+r.id +": "+ debugCounter++); //DEBUG
 			cur = frontier.poll();
+			//r.rc.setIndicatorString(1,cur.pathLength+""); //DEBUG
 			if(idxDistance(cur.idx) == searchDepth || cur.pathLength == maxPathLength){ // is this the best way to limit pathlength?
 				return cur.path;
 			}
 			for(Direction d : DIRECTIONS){
 				newLoc = new int[]{cur.idx[0]+d.dx, cur.idx[1]+d.dy}; //##does this work?
 				if(!visited[newLoc[0]][newLoc[1]]){
-					System.out.println(idxToLoc(newLoc).toString());
+					
 					heuristic = chessDistance(idxToLoc(newLoc), goal);
 					if(heuristic == 0) {
 						Direction[] goalPath = cur.path;
@@ -251,8 +269,7 @@ public class Navigator {
 		// Throws nullPointerException if queue is empty
 		public QueueElement poll(){
 			QueueElement min = queue[1];
-			queue[1] = queue[end];
-			queue[end--] = null;
+			queue[1] = queue[end--];
 			
 			int curNode = 1, 
 				l = 2,
