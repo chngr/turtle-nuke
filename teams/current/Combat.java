@@ -1,4 +1,4 @@
-package current;
+package blank;
 
 /**********************************
 Combat.java - Combat interface
@@ -27,9 +27,9 @@ public class Combat{
   private BaseRobot r;
 
   // Hard-coded values for possible move directions
-  private Direction[][] moveDirs = {{Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST},
-                                    {Direction.WEST, Direction.NONE, Direction.EAST},
-                                    {Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST}};
+  private Direction[] moveDirs = {Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
+                                  Direction.WEST, Direction.NONE, Direction.EAST,
+                                  Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST};
 
   // Local map for combat
   private int[][] localMap = { {0, 0, 0, 0, 0},
@@ -39,23 +39,26 @@ public class Combat{
                                {0, 0, 0, 0, 0}};
 
   // Costs for moving adjacent to enemy or ally
-  private int allyAdjacentCost = 30;
-  private int enemyAdjacentCost = 60;
-  private int enemyTile = 1000;
-  private int allyTile = 500;
+  private int enemyTile = 100;
+  private int allyTile = 50;
+  private int mineCost = 10000;
+
+  // Additional constants that affect how likely a robot will choose to go near
+  // allies or enemies
+  private int clumpingFactor = 3;
+  private int hostilityFactor = 5;
 
   Combat(BaseRobot robot){
     this.r = robot;
   }
 
-  // Set the desire to clump together in combat
-  public void setClumping(int clumpingFactor){
-    allyAdjacentCost = clumpingFactor;
+  // Methods to set some of the constants
+  public void setClumpingFactor(int factor){
+    this.clumpingFactor = factor;
   }
 
-  // Set the desire to get near enemies
-  public void setAggression(int aggressionFactor){
-    enemyAdjacentCost = (int)((r.rc.getEnergon()/40.0) * aggressionFactor);
+  public void setHostilityFactor(int factor){
+    this.hostilityFactor = factor;
   }
 
   // Basic combat method:
@@ -71,20 +74,19 @@ public class Combat{
     updateMap();
 
     // Calculate the cost for moving to an adjacent square
-    computeCosts();
+    int[] directionCosts = computeCosts();
 
     // Find the adjacent square with the minimal cost
-    int cost = 1000;
+    int cost = 9999;
     Direction dir = Direction.NONE;
-    for(int i = 1; i < 4; i++){
-      for(int j = 1; j < 4; j++){
-        int localCost = localMap[i][j];
-        if(localCost < cost){
-          cost = localCost;
-          dir = moveDirs[i-1][j-1];
-        }
+
+    for(int i = 0; i < 9; i++){
+      if(directionCosts[i] < cost){
+        dir = moveDirs[i];
+        cost = directionCosts[i];
       }
     }
+
     // If the best thing to do is not move, yield for now
     if(dir == Direction.NONE)
       return;
@@ -100,13 +102,19 @@ public class Combat{
       RobotInfo ri = r.rc.senseRobotInfo(robot);
       int dx = r.rc.getLocation().x - ri.location.x;
       int dy = r.rc.getLocation().y - ri.location.y;
+      int energon = (int)ri.energon;
 
       // Check if within map
-      if(Math.abs(dx) < 3 && Math.abs(dy) < 3){
+      if(-3 < dx && dx < 3 && -3 < dy && dy < 3){
         // Set the value of an occupied scared as + if team, - if enemy
-        localMap[2 + dx][2 + dy] = ri.team == r.rc.getTeam() ? allyTile : enemyTile;
+        // The cost of the square is set proportional to the energon of the robot
+        localMap[2 + dx][2 + dy] = ri.team == r.rc.getTeam() ?
+                                              allyTile * energon * clumpingFactor:
+                                              enemyTile * energon * hostilityFactor;
       }
     }
+
+    // Find nearby mines and update map correspondingly
   }
 
   // Based on sensed map, shall compute the cost for each move
@@ -115,28 +123,82 @@ public class Combat{
   // in map.
   //
   // * Note very naive and would be well to think of better method
-  private void computeCosts(){
-    // Go through the map, and simply adjust adjacent squares
-    for(int i = 0; i < 5; i++){
-      for(int j = 0; j < 5; j++){
-        // See if there is something there
-        if(localMap[i][j] < 0){
-          // Check if enemy or friend
-          int adjacentCost = localMap[i][j] > 750 ? enemyAdjacentCost : allyAdjacentCost;
+  private int[] computeCosts(){
+    // Compute the cost by taking the weighted sum of the surrounding squares
+    // Shall compute costs going along the edge inwards
 
-          // Fill all adjacent squares
-          for(int x = -1; x < 2; x++){
-            if(i + x < 0 || i + x > 5)
-              continue;
-            for(int y = -1; y < 2; y++){
-              if(j + y < 0 || j + y > 5)
-                continue;
-              localMap[i][j] += adjacentCost;
-            }
-          }
-        }
-      }
-    }
+    // Using the order
+    // NORTH_WEST, NORTH, NORTH_EAST,
+    // WEST,       NONE , EAST,
+    // SOUTH_WEST, SOUTH, SOUTH_WEST
+    // we compute the cost for moving a specific direction by summing the costs
+    // adjacent squares
+    int[] directionCosts = new int[9];
+    int rx = r.rc.getLocation().x;
+    int ry = r.rc.getLocation().y;
+    Team team = r.rc.getTeam();
+
+    if(r.rc.senseMine(new MapLocation(rx - 1, ry - 1)) != team)
+      directionCosts[0] = localMap[0][0] + localMap[0][1] + localMap[0][2] +
+                          localMap[1][0] + localMap[1][1] + localMap[1][1] +
+                          localMap[2][0] + localMap[2][1] + localMap[2][2];
+    else
+      directionCosts[0] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx, ry - 1)) != team)
+      directionCosts[1] = localMap[0][1] + localMap[0][2] + localMap[0][3] +
+                          localMap[1][1] + localMap[1][2] + localMap[1][3] +
+                          localMap[2][1] + localMap[2][2] + localMap[2][3];
+    else
+      directionCosts[1] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx + 1, ry - 1)) != team)
+      directionCosts[2] = localMap[0][2] + localMap[0][3] + localMap[0][4] +
+                          localMap[1][2] + localMap[1][3] + localMap[1][4] +
+                          localMap[2][2] + localMap[2][3] + localMap[2][4];
+    else
+      directionCosts[2] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx - 1, ry)) != team)
+      directionCosts[3] = localMap[1][0] + localMap[1][1] + localMap[1][2] +
+                          localMap[2][0] + localMap[2][1] + localMap[2][2] +
+                          localMap[3][0] + localMap[3][1] + localMap[3][2];
+    else
+      directionCosts[3] = mineCost;
+
+    directionCosts[4] = localMap[1][1] + localMap[1][2] + localMap[1][3] +
+                        localMap[2][1] + localMap[2][2] + localMap[2][3] +
+                        localMap[3][1] + localMap[3][2] + localMap[3][3];
+
+    if(r.rc.senseMine(new MapLocation(rx + 1, ry)) != team)
+      directionCosts[5] = localMap[1][1] + localMap[1][2] + localMap[1][4] +
+                          localMap[2][1] + localMap[2][3] + localMap[2][4] +
+                          localMap[3][1] + localMap[3][2] + localMap[3][4];
+    else
+      directionCosts[5] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx - 1, ry + 1)) != team)
+      directionCosts[6] = localMap[2][0] + localMap[2][1] + localMap[2][2] +
+                          localMap[3][0] + localMap[3][1] + localMap[3][2] +
+                          localMap[4][0] + localMap[4][1] + localMap[4][2];
+    else
+      directionCosts[6] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx, ry + 1)) != team)
+      directionCosts[7] = localMap[2][1] + localMap[2][2] + localMap[2][3] +
+                          localMap[3][1] + localMap[3][2] + localMap[3][3] +
+                          localMap[4][1] + localMap[4][2] + localMap[4][3];
+    else
+      directionCosts[7] = mineCost;
+
+    if(r.rc.senseMine(new MapLocation(rx + 1, ry + 1)) != team)
+      directionCosts[8] = localMap[2][2] + localMap[2][2] + localMap[2][4] +
+                          localMap[3][2] + localMap[3][3] + localMap[3][4] +
+                          localMap[4][2] + localMap[4][3] + localMap[4][4];
+    else
+      directionCosts[8] = mineCost;
+
+    return directionCosts;
   }
 
 }
