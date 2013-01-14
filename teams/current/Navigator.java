@@ -176,7 +176,7 @@ public class Navigator {
 			for(Direction d : DIRECTIONS){
 				newLoc = new int[]{cur.idx[0]+d.dx, cur.idx[1]+d.dy}; //##does this work?
 				if(!visited[newLoc[0]][newLoc[1]]){
-					
+					System.out.println(idxToLoc(newLoc).toString());
 					heuristic = chessDistance(idxToLoc(newLoc), goal);
 					if(heuristic == 0) {
 						Direction[] goalPath = cur.path;
@@ -252,6 +252,7 @@ public class Navigator {
 		public QueueElement poll(){
 			QueueElement min = queue[1];
 			queue[1] = queue[end];
+			queue[end--] = null;
 			
 			int curNode = 1, 
 				l = 2,
