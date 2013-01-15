@@ -28,25 +28,20 @@ public class Combat{
 
   // Hard-coded values for possible move directions
   private Direction[] moveDirs = {Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
-                                  Direction.WEST, Direction.NONE, Direction.EAST,
+                                  Direction.WEST,                 Direction.EAST,
                                   Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST};
 
   // Local map for combat
-  private int[][] localMap = { {0, 0, 0, 0, 0},
-                               {0, 0, 0, 0, 0},
-                               {0, 0, 0, 0, 0},
-                               {0, 0, 0, 0, 0},
-                               {0, 0, 0, 0, 0}};
+  private double[][] localMap = new double[7][7];
 
   // Costs for moving adjacent to enemy or ally
-  private int enemyTile = 100;
-  private int allyTile = 50;
-  private int mineCost = 10000;
+  private double enemyTile = -4.0;
+  private double allyTile = -1.0;
 
   // Additional constants that affect how likely a robot will choose to go near
   // allies or enemies
-  private int clumpingFactor = 3;
-  private int hostilityFactor = 5;
+  private double clumpingFactor = 0.2;
+  private double hostilityFactor = 1.0;
 
   Combat(RobotController robot){
     this.r = robot;
@@ -74,24 +69,43 @@ public class Combat{
     updateMap();
 
     // Calculate the cost for moving to an adjacent square
-    int[] directionCosts = computeCosts();
+    double[] directionCosts = computeCosts();
 
     // Find the adjacent square with the minimal cost
-    int cost = 9999;
-    Direction dir = Direction.NONE;
+    double cost = 100000.0;
+    Direction dir = r.getLocation().directionTo(r.senseEnemyHQLocation());
+    int directionOffset = 0;
 
-    for(int i = 0; i < 9; i++){
-      if(directionCosts[i] < cost){
+    for(int i = 0; i < 8; i++){
+      if(directionCosts[i] <= cost){
         dir = moveDirs[i];
         cost = directionCosts[i];
+        directionOffset = i;
       }
     }
 
+    String str = "";
+    for(int i = 0; i < 8; i++){
+      str += Double.toString(directionCosts[i]) + " ";
+    }
+    String dirStr = dir.toString();
+    r.setIndicatorString(0,str +  dirStr);
+
     // If the best thing to do is not move, yield for now
-    if(dir == Direction.NONE)
-      return;
-    else if(r.canMove(dir))
+    if(r.canMove(dir) && r.senseMine(r.getLocation().add(dir)) == null)
       r.move(dir);
+    else{
+      int[] offsets = {1, -1, 2, -2};
+      for(int i = 0; i < 4; i++){
+        int idx = (directionOffset + offsets[i] % 8) + 8;
+        dir = moveDirs[idx % 8];
+        if(r.canMove(dir) && r.senseMine(r.getLocation().add(dir)) == null){
+          r.move(dir);
+          r.setIndicatorString(0, str + dir.toString());
+          break;
+        }
+      }
+    }
   }
 
   // Senses for nearby robots and updates map accordingly
@@ -102,19 +116,15 @@ public class Combat{
       RobotInfo ri = r.senseRobotInfo(robot);
       int dx = r.getLocation().x - ri.location.x;
       int dy = r.getLocation().y - ri.location.y;
-      int energon = (int)ri.energon;
+      double energonScale = r.getEnergon() / ri.energon;
 
-      // Check if within map
-      if(-3 < dx && dx < 3 && -3 < dy && dy < 3){
-        // Set the value of an occupied scared as + if team, - if enemy
-        // The cost of the square is set proportional to the energon of the robot
-        localMap[2 + dx][2 + dy] = ri.team == r.getTeam() ?
-                                              allyTile * energon * clumpingFactor:
-                                              enemyTile * energon * hostilityFactor;
-      }
+      // Set the value of an occupied scared as + if team, - if enemy
+      // The cost of the square is set proportional to the energon of the robot
+      if(ri.team == r.getTeam())
+        localMap[3 - dx][3 - dy] = allyTile * energonScale * clumpingFactor;
+      else
+        localMap[3 - dx][3 - dy] = enemyTile * energonScale * energonScale * hostilityFactor;
     }
-
-    // Find nearby mines and update map correspondingly
   }
 
   // Based on sensed map, shall compute the cost for each move
@@ -123,7 +133,7 @@ public class Combat{
   // in map.
   //
   // * Note very naive and would be well to think of better method
-  private int[] computeCosts(){
+  private double[] computeCosts(){
     // Compute the cost by taking the weighted sum of the surrounding squares
     // Shall compute costs going along the edge inwards
 
@@ -133,72 +143,38 @@ public class Combat{
     // SOUTH_WEST, SOUTH, SOUTH_WEST
     // we compute the cost for moving a specific direction by summing the costs
     // adjacent squares
-    int[] directionCosts = new int[9];
-    int rx = r.getLocation().x;
-    int ry = r.getLocation().y;
-    Team team = r.getTeam();
+    double[] directionCosts = new double[8];
+    double twoFactor = 0.5;
+    double adjFactor = 0.9;
+    double locFactor = 0.2;
 
-    if(r.senseMine(new MapLocation(rx - 1, ry - 1)) != team)
-      directionCosts[0] = localMap[0][0] + localMap[0][1] + localMap[0][2] +
-                          localMap[1][0] + localMap[1][1] + localMap[1][1] +
-                          localMap[2][0] + localMap[2][1] + localMap[2][2];
-    else
-      directionCosts[0] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx, ry - 1)) != team)
-      directionCosts[1] = localMap[0][1] + localMap[0][2] + localMap[0][3] +
-                          localMap[1][1] + localMap[1][2] + localMap[1][3] +
-                          localMap[2][1] + localMap[2][2] + localMap[2][3];
-    else
-      directionCosts[1] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx + 1, ry - 1)) != team)
-      directionCosts[2] = localMap[0][2] + localMap[0][3] + localMap[0][4] +
-                          localMap[1][2] + localMap[1][3] + localMap[1][4] +
-                          localMap[2][2] + localMap[2][3] + localMap[2][4];
-    else
-      directionCosts[2] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx - 1, ry)) != team)
-      directionCosts[3] = localMap[1][0] + localMap[1][1] + localMap[1][2] +
-                          localMap[2][0] + localMap[2][1] + localMap[2][2] +
-                          localMap[3][0] + localMap[3][1] + localMap[3][2];
-    else
-      directionCosts[3] = mineCost;
-
-    directionCosts[4] = localMap[1][1] + localMap[1][2] + localMap[1][3] +
-                        localMap[2][1] + localMap[2][2] + localMap[2][3] +
-                        localMap[3][1] + localMap[3][2] + localMap[3][3];
-
-    if(r.senseMine(new MapLocation(rx + 1, ry)) != team)
-      directionCosts[5] = localMap[1][1] + localMap[1][2] + localMap[1][4] +
-                          localMap[2][1] + localMap[2][3] + localMap[2][4] +
-                          localMap[3][1] + localMap[3][2] + localMap[3][4];
-    else
-      directionCosts[5] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx - 1, ry + 1)) != team)
-      directionCosts[6] = localMap[2][0] + localMap[2][1] + localMap[2][2] +
-                          localMap[3][0] + localMap[3][1] + localMap[3][2] +
-                          localMap[4][0] + localMap[4][1] + localMap[4][2];
-    else
-      directionCosts[6] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx, ry + 1)) != team)
-      directionCosts[7] = localMap[2][1] + localMap[2][2] + localMap[2][3] +
-                          localMap[3][1] + localMap[3][2] + localMap[3][3] +
-                          localMap[4][1] + localMap[4][2] + localMap[4][3];
-    else
-      directionCosts[7] = mineCost;
-
-    if(r.senseMine(new MapLocation(rx + 1, ry + 1)) != team)
-      directionCosts[8] = localMap[2][2] + localMap[2][2] + localMap[2][4] +
-                          localMap[3][2] + localMap[3][3] + localMap[3][4] +
-                          localMap[4][2] + localMap[4][3] + localMap[4][4];
-    else
-      directionCosts[8] = mineCost;
+    directionCosts[0] = crossCost(2, 2, twoFactor, adjFactor, locFactor);
+    directionCosts[1] = crossCost(3, 2, twoFactor, adjFactor, locFactor);
+    directionCosts[2] = crossCost(4, 2, twoFactor, adjFactor, locFactor);
+    directionCosts[3] = crossCost(2, 3, twoFactor, adjFactor, locFactor);
+    directionCosts[4] = crossCost(4, 3, twoFactor, adjFactor, locFactor);
+    directionCosts[5] = crossCost(2, 4, twoFactor, adjFactor, locFactor);
+    directionCosts[6] = crossCost(3, 4, twoFactor, adjFactor, locFactor);
+    directionCosts[7] = crossCost(4, 4, twoFactor, adjFactor, locFactor);
 
     return directionCosts;
+  }
+
+  // Computes the cost around a given square in a diamond shape
+  //          #
+  //         ###
+  //        #####
+  //         ###
+  //          #
+  // where the squares two away from the centre are weighted by twoFactor,
+  // those that are one away from the centre by adjFactor, and the middle
+  // square by locFactor
+  private double crossCost(int x, int y, double tf, double af, double lf){
+    return tf*localMap[x][y-2] +
+           af*localMap[x-1][y-1] + af*localMap[x][y-1] + af*localMap[x+1][y+1] +
+           tf*localMap[x-2][y] + af*localMap[x-1][y] + lf*localMap[x][y] + af*localMap[x+1][y] + tf*localMap[x+2][y] +
+           af*localMap[x-1][y+1] + af*localMap[x][y+1] + af*localMap[x+1][y+1] +
+           tf*localMap[x][y+2];
   }
 
 }
