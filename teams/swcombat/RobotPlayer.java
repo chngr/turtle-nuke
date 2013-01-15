@@ -1,4 +1,4 @@
-package swarmwave;
+package swcombat;
 
 import battlecode.common.*;
 
@@ -23,12 +23,10 @@ public class RobotPlayer {
 			
 			while(true)
 			{
-				//try{
-					br.curRound = Clock.getRoundNum();				
-					br.run();
-	
-					br.rc.yield();
-				//} catch (Exception e){} //##temp
+				br.curRound = Clock.getRoundNum();				
+				br.run();
+
+				br.rc.yield();
 			}
 
 		} catch (Exception e) {

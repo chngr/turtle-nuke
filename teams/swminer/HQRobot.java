@@ -1,4 +1,4 @@
-package swarmwave;
+package swminer;
 
 import battlecode.common.*;
 

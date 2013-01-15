@@ -1,4 +1,4 @@
-package swarmwave;
+package swminer;
 
 import battlecode.common.*;
 
@@ -24,16 +24,15 @@ public class SoldierRobot extends BaseRobot {
 	eHQ = rc.senseEnemyHQLocation(); 
 	target = new MapLocation((3*HQ.x+eHQ.x)/4, (3*HQ.y+eHQ.y)/4);
 	
-	//## stop from going to already claimed ones; limit once every n spawns?
-	if(rc.getTeamPower() > rc.senseCaptureCost() && (id % CAPTOR_PROB == 0)){ //##experimental; add probability based on dist to eHQ?
-		MapLocation[] hostileEnc = rc.senseEncampmentSquares(rc.getLocation(), HQ.distanceSquaredTo(eHQ)/4, Team.NEUTRAL);
-		if(hostileEnc.length > 0){
-			captor = true;
-			MapLocation[] closerEnc = rc.senseEncampmentSquares(rc.getLocation(), 32, Team.NEUTRAL); //##rad=?
-			if(closerEnc.length > 0) target = closerEnc[id % closerEnc.length];
-			else target = hostileEnc[id % hostileEnc.length];
-		}
-	}
+//	if(rc.getTeamPower() > rc.senseCaptureCost() && (id % CAPTOR_PROB == 0)){ //##experimental; add probability based on dist to eHQ?
+//		MapLocation[] hostileEnc = rc.senseEncampmentSquares(rc.getLocation(), HQ.distanceSquaredTo(eHQ)/4, Team.NEUTRAL);
+//		if(hostileEnc.length > 0){
+//			captor = true;
+//			MapLocation[] closerEnc = rc.senseEncampmentSquares(rc.getLocation(), 32, Team.NEUTRAL); //##rad=?
+//			if(closerEnc.length > 0) target = closerEnc[id % closerEnc.length];
+//			else target = hostileEnc[id % hostileEnc.length];
+//		}
+//	}
 			
   }
 

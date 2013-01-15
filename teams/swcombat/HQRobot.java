@@ -1,4 +1,4 @@
-package swarmwave;
+package swcombat;
 
 import battlecode.common.*;
 
@@ -8,7 +8,8 @@ public class HQRobot extends BaseRobot {
   public int curSpawnDelay; // change when upgrade suppliers
   private Upgrade[] upgrades = {Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
   private int upgradeNumber = 0;
-  private double spawnMinPower = GameConstants.HQ_POWER_PRODUCTION + 10; // should adjust for generators
+  private int timeSinceLastUpgrade = 0;
+  private double upgradeThreshold = 0.0005;
 
   HQRobot(RobotController rc){
     super(rc);
@@ -18,22 +19,28 @@ public class HQRobot extends BaseRobot {
 
   public void run() throws GameActionException{
     if (rc.isActive()){
-      // If we're running out of power, we don't need more robots
-      if(rc.getTeamPower() > spawnMinPower){
-          spawn();
-      } else {
-        if(rc.hasUpgrade(upgrades[upgradeNumber])){
-        	upgradeNumber++;
+      // Randomly decide when to upgrade based on thresholds
+      double whatDo = Math.random();
+      if(whatDo < upgradeThreshold * timeSinceLastUpgrade){
+        if(!rc.hasUpgrade(upgrades[upgradeNumber])){
+          rc.researchUpgrade(upgrades[upgradeNumber]);
         }
-        rc.researchUpgrade(upgrades[upgradeNumber]);
+        else{
+          timeSinceLastUpgrade = 0;
+          upgradeNumber++;
+        }
       }
-
+      // Otherwise, the HQ will default to spawn
+      else{
+        spawn();
+      }
     }
     // If inactive, check out when it is next active
     else {
       spawnTimeLeft--;
       rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
     }
+    timeSinceLastUpgrade++;
   }
   private void spawn() throws GameActionException{
     // Spawn a soldier
