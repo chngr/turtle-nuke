@@ -33,7 +33,7 @@ public class BaseRobot
 		this.util = new Utilities(this);
 		this.comm = new Communicator(this);
 		this.nav = new SimpleNavigator(this);
-		this.combat = new Combat(rc); //##this??
+		this.combat = new Combat(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();

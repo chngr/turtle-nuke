@@ -24,7 +24,7 @@ tendency to engage enemy robots.
 import battlecode.common.*;
 
 public class Combat{
-  private RobotController r;
+  private BaseRobot r;
 
   // Hard-coded values for possible move directions
   private Direction[] moveDirs = {Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
@@ -43,7 +43,7 @@ public class Combat{
   private double clumpingFactor = 0.2;
   private double hostilityFactor = 1.0;
 
-  Combat(RobotController robot){
+  Combat(BaseRobot robot){
     this.r = robot;
   }
 
@@ -73,7 +73,7 @@ public class Combat{
 
     // Find the adjacent square with the minimal cost
     double cost = 100000.0;
-    Direction dir = r.getLocation().directionTo(r.senseEnemyHQLocation());
+    Direction dir = r.rc.getLocation().directionTo(r.rc.senseEnemyHQLocation());
     int directionOffset = 0;
 
     for(int i = 0; i < 8; i++){
@@ -89,19 +89,19 @@ public class Combat{
       str += Double.toString(directionCosts[i]) + " ";
     }
     String dirStr = dir.toString();
-    r.setIndicatorString(0,str +  dirStr);
+    r.rc.setIndicatorString(0,str +  dirStr);
 
     // If the best thing to do is not move, yield for now
-    if(r.canMove(dir) && r.senseMine(r.getLocation().add(dir)) == null)
-      r.move(dir);
+    if(r.rc.canMove(dir) && r.rc.senseMine(r.rc.getLocation().add(dir)) == null)
+      r.rc.move(dir);
     else{
       int[] offsets = {1, -1, 2, -2};
       for(int i = 0; i < 4; i++){
         int idx = (directionOffset + offsets[i] % 8) + 8;
         dir = moveDirs[idx % 8];
-        if(r.canMove(dir) && r.senseMine(r.getLocation().add(dir)) == null){
-          r.move(dir);
-          r.setIndicatorString(0, str + dir.toString());
+        if(r.rc.canMove(dir) && r.rc.senseMine(r.rc.getLocation().add(dir)) == null){
+          r.rc.move(dir);
+          r.rc.setIndicatorString(0, str + dir.toString());
           break;
         }
       }
@@ -110,17 +110,17 @@ public class Combat{
 
   // Senses for nearby robots and updates map accordingly
   private void updateMap() throws GameActionException{
-    Robot[] nearbyRobots = r.senseNearbyGameObjects(Robot.class, 14);
+    Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);
     // Process nearby robots
     for(Robot robot: nearbyRobots){
-      RobotInfo ri = r.senseRobotInfo(robot);
-      int dx = r.getLocation().x - ri.location.x;
-      int dy = r.getLocation().y - ri.location.y;
-      double energonScale = r.getEnergon() / ri.energon;
+      RobotInfo ri = r.rc.senseRobotInfo(robot);
+      int dx = r.rc.getLocation().x - ri.location.x;
+      int dy = r.rc.getLocation().y - ri.location.y;
+      double energonScale = r.rc.getEnergon() / ri.energon;
 
       // Set the value of an occupied scared as + if team, - if enemy
       // The cost of the square is set proportional to the energon of the robot
-      if(ri.team == r.getTeam())
+      if(ri.team == r.rc.getTeam())
         localMap[3 - dx][3 - dy] = allyTile * energonScale * clumpingFactor;
       else
         localMap[3 - dx][3 - dy] = enemyTile * energonScale * energonScale * hostilityFactor;
