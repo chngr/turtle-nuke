@@ -6,8 +6,10 @@ public class SoldierRobot extends BaseRobot {
   
   private int waiting = 0;
   private static final int WAIT_TIMEOUT = 10;
-  private static final int WAVE_SIZE = 200;
+  private static final int WAVE_SIZE = 50;
   
+  private MapLocation eHQ;
+  private int rushDist = 10;
   
   // Phalanx vars
   private MapLocation phlxCenter;
@@ -24,6 +26,7 @@ public class SoldierRobot extends BaseRobot {
   SoldierRobot(RobotController rc) throws GameActionException{
     super(rc);
     initPhalanx();
+    eHQ = rc.senseEnemyHQLocation(); 
   }
 
   public void run() throws GameActionException{ 
@@ -31,15 +34,21 @@ public class SoldierRobot extends BaseRobot {
 	if(curRound % WAVE_SIZE == 0 && phlxState == PhalanxState.IDLE) phlxState = PhalanxState.ADVANCING; 
 	
     if (rc.isActive()) {
-    	switch (phlxState) {
-	    	case SEEKING:
-	    		seek();
-	    		break;
-	    	case FORMING:
-	    		form();
-	    		break;
-	    	case ADVANCING:
-	    		advance();
+    	if(util.getDistanceBetween(rc.getLocation(), eHQ) < rushDist){
+    		tunnelTo(eHQ);
+    	} else {
+	    	switch (phlxState) {
+		    	case SEEKING:
+		    		seek();
+		    		break;
+		    	case FORMING:
+		    		form();
+		    		break;
+		    	case ADVANCING:
+		    		advance();
+			default:
+				break;
+	    	}
     	}
     }
     
@@ -69,7 +78,10 @@ public class SoldierRobot extends BaseRobot {
 		  mySide = phlxFront.rotateLeft().rotateLeft();
 		  isLeft = true;
 	  }
+	  
+	  phlxState = PhalanxState.SEEKING;
   }
+  
   
   // Completely stupid with respect to collisions; would need to fix
   private void seek() throws GameActionException{
@@ -80,47 +92,58 @@ public class SoldierRobot extends BaseRobot {
 		form();
 	  }
   }
+
   private void form() throws GameActionException{
 	  Direction tryDir = isLeft ? mySide.rotateRight() : mySide.rotateLeft();
-	  if(rc.canMove(tryDir)) moveOrDefuse(tryDir);
+	  if(rc.canMove(tryDir)){
+		  System.out.println("at dest");
+		  if(moveOrDefuse(tryDir)) phlxState = PhalanxState.IDLE; // In the phalanx line
+	  }
 	  else if(rc.canMove(mySide)) moveOrDefuse(mySide);
   }
+  
+  //## In util?
+  private int[][] dirIdxs = { // From north, clockwise
+		  {1,0},{2,0},{2,1},{2,2},{1,2},{0,2},{0,1},{0,0}
+  };
+  
+  // Currently most naive possible advance - ignores enemies,
+  // just focuses on advancing as a line
+  boolean[][] map;
   private void advance() throws GameActionException{
-	  int[][] map = new int[5][5]; //1:ally 2:enemy
-	  Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class, 8);
+	  if(rc.canMove(phlxFront)){
+		  map = localMap(); // Adjacent allies
+		  
+		  int fIdx = phlxFront.ordinal();//##?
+		  if(  (isAlly(fIdx-1) || (!isAlly(fIdx-2) && !isAlly(fIdx-3)))
+			&& (isAlly(fIdx+2) || (!isAlly(fIdx+1) && !isAlly(fIdx+3))) ){
+			moveOrDefuse(phlxFront);  
+		  }
+  	  }
+  }
+  private boolean isAlly(int dirOrd) {
+	  int[] idx = dirIdxs[ ((dirOrd < 0) ? dirOrd+8 : dirOrd) % 8 ]; // Wrapping
+	  return map[idx[0]][idx[1]];
+  }
+  
+  private boolean[][] localMap() throws GameActionException{
+	  boolean[][] map = new boolean[3][3]; //1:ally 2:enemy
+	  Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class, 2, myTeam);
 	  RobotInfo rInfo;
 	  int[] idxs;
 	  for(Robot r : nearbyRobots){
 		  rInfo = rc.senseRobotInfo(r);
 		  idxs = locToIndex(rInfo.location);
-		  map[idxs[0]][idxs[1]] = (rInfo.team == myTeam) ? 1 : 2;
+		  map[idxs[0]][idxs[1]] = true;
 	  }
 	  
-	  MapLocation myLoc = rc.getLocation();
-	  switch (phlxFront) {
-		  case NORTH:
-			  break;
-			  
-		  case EAST:
-			  break;
-			  
-		  case SOUTH:
-			  break;
-			  
-		  case WEST:
-			  break;
-			  
-		  default: System.out.println("Invalid dir");
-		  
-	  }
+	  return map;
   }
-  
-  
   private int[] locToIndex(MapLocation loc){
 	  MapLocation myLoc = rc.getLocation();
 	  int[] index = new int[2];
-	  index[0] = loc.x - myLoc.x + 2;
-	  index[1] = loc.y - myLoc.y + 2;
+	  index[0] = loc.x - myLoc.x + 1;
+	  index[1] = loc.y - myLoc.y + 1;
 	  return index;
   }
   
@@ -134,15 +157,17 @@ public class SoldierRobot extends BaseRobot {
 	  }
 	  else waiting = WAIT_TIMEOUT;
   }
-  private void moveOrDefuse(Direction dir) throws GameActionException{
+  // Returns whether we moved (
+  private boolean moveOrDefuse(Direction dir) throws GameActionException{
 	  waiting = 0;
 	  MapLocation loc = rc.getLocation().add(dir);
 	  Team mine = rc.senseMine(loc);
 	  if (mine == rc.getTeam() || mine == null){
 		  rc.move(dir);
-	  } else {
-		  rc.defuseMine(loc);
+		  return true;
 	  }
+	  rc.defuseMine(loc);
+	  return false;
   }
   
 }
