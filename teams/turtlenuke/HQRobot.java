@@ -18,7 +18,7 @@ public class HQRobot extends BaseRobot {
     if (rc.isActive()){
       if(stage == 0){
     	  rc.researchUpgrade(Upgrade.PICKAXE);
-    	  if(turnsToPickaxe-- == 0) stage = 1;
+    	  if(--turnsToPickaxe == 0) stage = 1;
       } else if(stage == 1){
     	  Robot[] defenders = rc.senseNearbyGameObjects(Robot.class, 8, myTeam); //5x5; ## depends on FORTIFY_RADIUS
     	  if(defenders.length >= 16){
