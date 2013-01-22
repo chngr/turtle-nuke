@@ -10,53 +10,124 @@ import battlecode.common.*;
 
 public class SoldierRobot extends BaseRobot {
 	
-  //@@ Will belong to FortifyBehavior
-  private MapLocation fortCenter;
-  private Direction[] fortDirs = null; // ##? null: all directions; only N/E/S/W valid, no repeats
-  //##? replace with boolean[] = {N?,E?,S?,W?}
-  //##? instead just starting pos and wallnum/length?
-  private int fortRadius = 2; // (square) radius of mine wall; must be even //##add 1 otherwise?
-  // Could have a density variable, i.e. spacing on the barrier
-
   
-  private Direction dirToCamp;
-  private Robot defuser;
+  private enum FortState { BUILDING, SEEKING_CAMP, DEFENDING, SUPPORT };
+  private FortState fortState;
+  
+  // Could have a density variable, i.e. spacing on the barrier
   
 	
   SoldierRobot(RobotController rc){
     super(rc);
-    fortCenter = rc.senseHQLocation();
+    MapLocation HQ = rc.senseHQLocation();
+    buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()), 4);
   }
 
   public void run() throws GameActionException{
-    
     fortify();
     //jam();
-
   }
   
   //@@ Will be FortifyBehavior.run()
-  //## might want parameterized versions with 
-  private void fortify() throws GameActionException{
-	  //## check whether moving to seeking, building, or defending[engaged,camping]
-	  // Should also eventually have reserve mode, for waiting to replace lost defender
+  private void fortify() throws GameActionException {
 	  
 	  // set home location when at fortification?
-	  
-	  //## incomplete, need to account for fortifyDirections
-	  if(util.getDistanceBetween(rc.getLocation(), fortCenter) != fortRadius){ 
-		  // move to fortification barrier
+	  if(rc.isActive()){  
+		  switch(fortState) {
+		  case BUILDING:
+			  build();
+			  break;
+		  case SEEKING_CAMP:
+			  seekCamp();
+			  break;
+		  case DEFENDING:
+			  defend();
+		  case SUPPORT:
+			  support();
+			  break;
+		  }
 	  }
+  }
+  
+  // ------ SET FORTIFICATION GOAL ------
+  
+  private void buildFort(MapLocation center, int radius, Direction startEdge, int numDirs){
+	  buildQueue = new WallSegment[numDirs];
+	  
+	  Direction d = startEdge;
+	  MapLocation corner;
+	  for(int i=0; i < numDirs; i++){
+		  corner = fortCorner(center, d, radius);
+		  buildQueue[i] = new WallSegment(corner, d, radius);
+		  d = d.rotateRight().rotateRight();
+	  }
+	  initBuild();
+  }
+  //Returns the corner of the fortification corresponding to a direction (counterclockwise)
+  private MapLocation fortCorner(MapLocation center, Direction d, int radius){
+	   return center.add(d.rotateLeft(), radius);
+  }
+  
+  
+  private void buildWall(MapLocation leftEdge, Direction dir, int length){
+	  buildQueue = new WallSegment[1];
+	  buildQueue[0] = new WallSegment(leftEdge, dir, length);
+	  initBuild();
+  }
+  
+  private void initBuild(){
+	  resetProgress();
+	  curWall = buildQueue[0];
+	  fortState = FortState.BUILDING;
+  }
+  
+  private void resetProgress(){
+	  //## all important state vars
+  }
+  
+  
+  // ------ FORTIFICATION LOGIC ------
+  
+  private MapLocation buildTarget;
+  private void build() throws GameActionException{
+	  if(rc.getLocation().equals(buildTarget)){
+		  rc.layMine();
+	  }	  
 	  else {
-		  
+		  buildTarget = getBuildSpot(); // improvement: don't do this every time
+		  if(buildTarget != null){
+			  nav.tunnelTo(buildTarget);
+		  } else {
+			  fortState = FortState.SEEKING_CAMP;
+			  queueIdx = 0; // Reset these, as seekCamp uses them; I guess?
+			  curWall = buildQueue[0];
+			  seekCamp();
+	      }
 	  }
-	  
-	  //## building
-	  Direction currentFortifyDir; //## determine this
-	  
-	  
-	  
-	  //## defending
+  }
+  
+  private MapLocation campTarget;
+  private void seekCamp() throws GameActionException{
+	  if(rc.getLocation().equals(buildTarget)){
+		  fortState = FortState.DEFENDING;
+		  defend();
+	  }	  
+	  else {
+		  campTarget = getCamp(); // definitely silly to do this every time
+		  if(campTarget != null){
+			  nav.tunnelTo(campTarget);
+		  } else {
+			  // All camps are (hopefully) defended; enter support mode
+			  // and replace fallen defenders (rebuild walls?)
+			  fortState = FortState.SUPPORT;
+			  support();
+	      }
+	  }
+  }
+  
+  private Direction dirToCamp;
+  private Robot defuser;
+  private void defend() throws GameActionException{
 	  if(defuser != null) {	 // Engaged
 		  if(rc.senseRobotInfo(defuser).roundsUntilAttackIdle == 0){ //## correct? also, what if the robot is dead?
 			  defuser = null;
@@ -64,6 +135,7 @@ public class SoldierRobot extends BaseRobot {
 				  rc.move(dirToCamp);
 				  dirToCamp = null;
 			  } //## else, what? shouldn't happen normally, mine push might fit well
+			    // doing nothing will leave it camping outside the mines
 		  }
 	  }
 	  else { 				 // Camping
@@ -84,85 +156,14 @@ public class SoldierRobot extends BaseRobot {
 	  }
   }
   
-  // Could generalize to any construction with sectionDeltas and lists of sections
-  
-  // Returns the corner of the fortification corresponding to a direction (counterclockwise)
-  private MapLocation fortCorner(Direction d){
-	  return fortCenter.add(d.rotateLeft(), fortRadius);
-  }
-
-  
-//  private MapLocation firstRequiredMine; //## first fort corner
-//  private MapLocation requiredMineLoc; //## init with above?
-//  private MapLocation nextRequiredMine(){ //##null if done placing
-//	  do {
-//		  if(rc.senseMineLocations(requiredMineLoc, 1, myTeam).length != 5){ // Check if fully mined
-//			  return requiredMineLoc;
-//		  }
-//		  //## check for change of wall
-//		  if(mineLocIdx % fortRadius == 0); //## ; may not be 0
-//		  delta = mineDeltas[curWall][mineLocIdx % 2];
-//		  requiredMineLoc = requiredMineLoc.add(delta[0], delta[1]);
-//		  mineLocIdx++;
-//	  } while(!requiredMineLoc.equals(firstRequiredMine)); //##?
-//	  return null;
-//  }
-  
-  private void defend(){
-	  
-  }
-  
-  private void build(){
-	  
+  private void support(){
+	  //## TODO
   }
   
   
-  
-  
-  //## alt method
   private WallSegment[] buildQueue; //## at top
-  
-  //## need to initialize curWall when setting buildQueue
-  private MapLocation getBuildSpot(){
-	  while(!needsMine(curWall.curLoc)){
-		  nextWallLoc();
-	  }
-	  return curWall.curLoc;
-  }
-
-  
-  private int queueIdx;
   private WallSegment curWall;
-  
-  //## need to also call when arrived at a blocked wallloc
-  private boolean nextWallLoc(){
-	  if(curWall.nextLoc()){
-		  return true;
-	  }
-	  if(queueIdx < buildQueue.length){
-		  curWall = buildQueue[++queueIdx];
-		  return true;
-	  }
-	  return false;
-  }
-
-  
-  // For now, just check whether it needs mines, and let
-  // the robot detect if there is another robot mining it
-  // when it gets there, since it needs to do this anyway
-  private boolean needsMine(MapLocation loc){
-	  return (rc.senseMineLocations(loc, 1, myTeam).length != 5);
-  }
-  //##replace w/ fort
-//  private class WallSegment{
-//	  //## camp locs
-//	  public MapLocation start;
-//	  public Direction dir;
-//	  public int length;
-//	  WallSegment(MapLocation s, Direction d, int l){
-//		  start = s; dir = d; length = l;
-//	  }
-//  }
+  private int queueIdx;
   
   private static class WallSegment {
 	  
@@ -174,26 +175,84 @@ public class SoldierRobot extends BaseRobot {
 		  {{1,-2}, {-1,-2}}  // West
 	  };
 	  
-	  //## camp locs
-	  public MapLocation start; //## no longer correct; start at end of previous
-	  public MapLocation curLoc;
+	  public MapLocation start;
+	  public MapLocation curMine;
+	  public MapLocation curCamp;
+	  public Direction dir;
 	  public int dirOrd;
 	  public int length;
 	  
 	  private int curIdx = 0;
 	  
-	  WallSegment(MapLocation s, int dOrd, int l){
-		  curLoc = start = s; dirOrd = dOrd; length = l;
+	  WallSegment(MapLocation s, Direction d, int l){
+		  curMine = start = s;
+		  curCamp = s.add(d.rotateRight());
+		  dir = d;
+		  dirOrd = dirIdx(d);
+		  length = l;
 	  }
 	  
-	  public boolean nextLoc(){
-		  if(curIdx < length) { //## off by one?
+	  public boolean nextMine(){
+		  if(curIdx < length) {
 			  int[] deltas = mineDeltas[dirOrd][curIdx++ % 2]; // Could generalize to % appropriate deltas.length
-			  curLoc = curLoc.add(deltas[0],deltas[1]);
+			  curMine = curMine.add(deltas[0],deltas[1]);
 			  return true;
 		  }
 		  return false;
 	  }
+	  
+	  public boolean nextCamp(){
+		  if(curIdx < 2*length - 2){ //##?
+			  curMine.add(dir);
+			  return true;
+		  }
+		  return false;
+	  }
+	  
+	  private int dirIdx(Direction d){
+		  return d.ordinal() / 2; //## probably wrong
+	  }
+  }
+  
+  private MapLocation getBuildSpot() throws GameActionException{
+	  while(!needsMine(curWall.curMine) || occupied(curWall.curMine)){
+		  if(!nextWallLoc()) return null; // Updates curWall/curMine; returns null when done building
+	  }
+	  return curWall.curMine;
+  }
+  private boolean needsMine(MapLocation loc){
+	  return (rc.senseMineLocations(loc, 1, myTeam).length != 5);
+  }
+  private boolean occupied(MapLocation loc) throws GameActionException{
+	  return rc.canSenseSquare(loc) && (rc.senseObjectAtLocation(loc) != null);
+  }
+  private boolean nextWallLoc(){
+	  if(curWall.nextMine()){
+		  return true;
+	  }
+	  if(queueIdx < buildQueue.length){
+		  curWall = buildQueue[++queueIdx];
+		  return true;
+	  }
+	  return false;
+  }
+ 
+  // Basically a duplicate of build spot logic; not sure how to combine
+  private MapLocation getCamp() throws GameActionException{
+	  while(occupied(curWall.curCamp)){
+		  if(!nextCampLoc()) return null; // Updates curWall/curLoc; returns null when done building
+	  }
+	  return curWall.curCamp;
+  }
+  private boolean nextCampLoc(){
+	  if(curWall.nextCamp()){
+		  return true;
+	  }
+	  if(queueIdx < buildQueue.length){ //## using same vars as build; I guess?
+		  curWall = buildQueue[++queueIdx];
+		  return true;
+	  }
+	  return false;
   }
   
 }

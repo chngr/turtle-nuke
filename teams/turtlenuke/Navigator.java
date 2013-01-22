@@ -281,4 +281,27 @@ public class Navigator {
 		
 	}
 	
+	
+	// ------ ALTERNATE MOVE METHODS ------
+	
+	  public void tunnelTo(MapLocation loc) throws GameActionException{
+		  if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
+			  Direction dir = r.rc.getLocation().directionTo(loc);
+			  if(r.rc.canMove(dir)) moveOrDefuse(dir);
+			  else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
+			  else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
+		  }
+	  }
+	  
+	  public boolean moveOrDefuse(Direction dir) throws GameActionException{
+		  MapLocation loc = r.rc.getLocation().add(dir);
+		  Team mine = r.rc.senseMine(loc);
+		  if (mine == r.rc.getTeam() || mine == null){
+			  r.rc.move(dir);
+			  return true;
+		  }
+		  r.rc.defuseMine(loc);
+		  return false;
+	  }
+	
 }

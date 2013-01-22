@@ -4,51 +4,40 @@ import battlecode.common.*;
 
 public class HQRobot extends BaseRobot {
 
-  public int spawnTimeLeft;
-  public int curSpawnDelay; // change when upgrade suppliers
-  private Upgrade[] upgrades = {Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
-  private int upgradeNumber = 0;
-  private int timeSinceLastUpgrade = 0;
-  private double upgradeThreshold = 0.0005;
+  
+  //@@ TurtleNuke strategy vars
+  private static final int FORTIFY_RADIUS = 2; // May want something more sophisticated, e.g. layers
+  private int stage = 0; // Strategy stage; have this?
 
   HQRobot(RobotController rc){
     super(rc);
-    spawnTimeLeft = 0;
-    curSpawnDelay = GameConstants.HQ_SPAWN_DELAY;
   }
 
+  private int turnsToPickaxe = Upgrade.PICKAXE.numRounds;
   public void run() throws GameActionException{
     if (rc.isActive()){
-      // Randomly decide when to upgrade based on thresholds
-      double whatDo = Math.random();
-      if(whatDo < upgradeThreshold * timeSinceLastUpgrade){
-        if(!rc.hasUpgrade(upgrades[upgradeNumber])){
-          rc.researchUpgrade(upgrades[upgradeNumber]);
-        }
-        else{
-          timeSinceLastUpgrade = 0;
-          upgradeNumber++;
-        }
-      }
-      // Otherwise, the HQ will default to spawn
-      else{
-        spawn();
+      if(stage == 0){
+    	  rc.researchUpgrade(Upgrade.PICKAXE);
+    	  if(turnsToPickaxe-- == 0) stage = 1;
+      } else if(stage == 1){
+    	  Robot[] defenders = rc.senseNearbyGameObjects(Robot.class, 8, myTeam); //5x5; ## depends on FORTIFY_RADIUS
+    	  if(defenders.length >= 16){
+    		  rc.researchUpgrade(Upgrade.NUKE);
+    	  }
+    	  else {
+    		  spawn(); // ## in actual strategy, will need to instruct new robot to defend
+    	  }
       }
     }
-    // If inactive, check out when it is next active
-    else {
-      spawnTimeLeft--;
-      rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
-    }
-    timeSinceLastUpgrade++;
   }
+  
   private void spawn() throws GameActionException{
     // Spawn a soldier
     Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 
     // Spawns soldier if possible to move
     if (rc.canMove(dir)) {
-      spawnInDir(dir);
+      rc.spawn(dir);
     }
     // Try to move around to spawn in different direction
     else {
@@ -58,13 +47,13 @@ public class HQRobot extends BaseRobot {
       while (dirRight != dirLeft) {
         dirLeft = dirLeft.rotateLeft();
         if (rc.canMove(dirLeft)) {
-          spawnInDir(dirLeft);
+          rc.spawn(dirLeft);
           break;
         }
         else {
           dirRight = dirRight.rotateRight();
           if (rc.canMove(dirRight)) {
-            spawnInDir(dirRight);
+            rc.spawn(dirRight);
             break;
           }
         }
@@ -72,9 +61,4 @@ public class HQRobot extends BaseRobot {
     }
   }
 
-  private void spawnInDir(Direction dir) throws GameActionException{
-    rc.spawn(dir);
-    spawnTimeLeft = curSpawnDelay;
-    rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
-  }
 }

@@ -157,7 +157,7 @@ public class SoldierRobot extends BaseRobot {
 	  }
 	  else waiting = WAIT_TIMEOUT;
   }
-  // Returns whether we moved (
+  // Returns whether we moved
   private boolean moveOrDefuse(Direction dir) throws GameActionException{
 	  waiting = 0;
 	  MapLocation loc = rc.getLocation().add(dir);
