@@ -36,12 +36,12 @@ public class RobotPlayer {
                     rc.captureEncampment(build);
                   }
                 }
-                else if(!rc.getLocation().equals(goal) && rc.canSenseSquare(goal) && rc.senseObjectAtLocation(goal) != null && rc.senseObjectAtLocation(goal).getTeam() == rc.getTeam()){
-                  goal = nearbyEncampments[0];
-                }
               }
               // Move in a random direction
-              if(Math.random() < 0.9){
+              if(Math.random() < 0.1 && rc.senseMine(rc.getLocation()) == null){
+                rc.layMine();
+              }
+              else if(Math.random() < 0.9){
                 if(goal == null){
                   goal = rc.senseEnemyHQLocation();
                 }
@@ -65,7 +65,7 @@ public class RobotPlayer {
                   }
                 }
                 // Check if the thing is a mine
-                if(rc.senseMine(rc.getLocation().add(dir)) != null){
+                if(rc.senseMine(rc.getLocation().add(dir)) != null && rc.senseMine(rc.getLocation().add(dir)) != rc.getTeam()){
                   if(Math.random() > 0.1)
                     rc.defuseMine(rc.getLocation().add(dir));
                   else
@@ -91,11 +91,11 @@ public class RobotPlayer {
     if (rc.isActive()) {
       // Spawn a soldier
       Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-      if (rc.canMove(dir))
+      if (rc.canMove(dir) && Clock.getRoundNum() % 2 != 0)
         rc.spawn(dir);
       // Tries to spawn, otherwise shall research instead
       else{
-        Upgrade[] upgrades = {Upgrade.DEFUSION, Upgrade.FUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
+        Upgrade[] upgrades = {Upgrade.PICKAXE, Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.VISION, Upgrade.NUKE};
         for(int i = 0; i < 5; i++){
           if(rc.hasUpgrade(upgrades[i]))
             continue;

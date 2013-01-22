@@ -9,3 +9,92 @@ Updates to the Game
 
 1. Yielding no longer offers bonuses in power
 2. Checking nuke build progress only works when halfway done
+
+Strategy : January 15, 2013 Notes
+=================================
+
+The idea is to have a finite state machine that figures out what sort of
+strategies/general behaviours we shall have over a game. There shall be some
+function on the HQ that calculates the "effectiveness" of a given strategy by
+some metric function. Then if it deems that the strategy is doing well, we may
+keep going with the current strategy. Otherwise, switch to a more appropriate
+strategy.
+
+To effect a strategy on robots, we may make up a set of general behaviours in
+which they should follow. The HQ will send orders to follow a specific
+behaviour to each Robot via their communications channel. In this way, there
+is a localized sense of planning.
+
+Some potential strategies might include:
+
+  1. Turtle-Nuke
+  2. Push-mines
+  3. Aggressive Rush
+
+and some relevant behaviours might include:
+
+  1. Capture
+  2. Swarm
+  3. Combat
+  4. Scout
+  5. Fortify
+  6. Jamming
+
+Some notes on the functions:
+
+  - Capture can be overloaded to take a target or just general encampments
+    nearby
+  - Jamming can be done deviously by replays or simply scanning and flooding.
+    Another idea might be to implement some sort of cross-game relpay attack.
+
+Turtle Nuke
+-----------
+
+The general strategy of turtle nuke shall be outlined below.
+
+(OPTIONAL) The HQ will find encampments and the bots may scout. At this point,
+the bots might also go and construct some encampments based. However, this
+sort of encampment capturing might not be worth it in this sort of strategy.
+
+After that initial set up stage, the HQ should begin to research **pickaxe**.
+Meanwhile, bots will fortify the nearby area with an effective tiling of
+mines.
+
+With this done, a bit of spawning shall be followed by intense research of
+the nuke and continual fortification of the HQ. At this point, bots should be
+engaged in general fortification behaviour.
+
+At this point, it is up to chance and luck for the effectiveness of the game.
+
+Remarks on Team Memory
+----------------------
+
+One thing that might be helpful
+
+Implementational Notes
+======================
+
+The idea is to query the personal inbox to check whether or not there is a
+behaviour that the robot should take at the time being. Otherwise, we shall
+take a `default` behaviour, that is something along the lines of scouting or
+something like that.
+
+Within BaseRobot, or SoldierRobot for that
+
+    BaseRobot
+      initializeState
+      (determineBehaviour(state))
+
+      if(stateX)
+        stateX()
+      else if(stateY)
+        stateY()
+        ...
+      else
+        default()
+
+      cleanUpCode
+
+      rc.yield
+
+
