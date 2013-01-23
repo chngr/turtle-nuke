@@ -17,15 +17,18 @@ Current square attributes:
 //Multiply heuristic cost by 1.01 to increase greediness? Won't break anything
 import battlecode.common.*;
 
+// SEARCH:
+//TODO: !!! Do the next search (centered at the current goal location) while moving !!!
 
 //TODO:@1 other robots
 //TODO: map edges
 
+//TODO: don't copy the whole path for new nodes, just include a reference to the parent's path
 //TODO: error handling
 //TODO: bytecodes
 //TODO: getter/setter for searchDepth, searchFreq
 //TODO:@5 danger and impatience state variables; will need to replan path when they change
-//TODO: stagger map update and search (update centered on next square)?
+
 
 //Infinite loop debugging:
 // 	private int debugCounter = 0; //DEBUG
@@ -47,6 +50,10 @@ public class Navigator {
 		
 	private BaseRobot r;
 	
+	
+	// ------------   SEARCH   ------------
+	// Truncated pseudo A* search to find the best path to the goal
+	// Efficient movement, but expensive computationally
 
 	private int searchDepth = 5; //?
 	private int mapDiagRSquared = 2*searchDepth*searchDepth;
@@ -279,6 +286,32 @@ public class Navigator {
 			return min;
 		}
 		
+	}
+	
+	
+
+	// ------------   TUNNEL   ------------
+	// Move directly to the target, defusing mines
+	// Useful if the path is going to be traveled often, or we don't want mines there
+	
+    public void tunnelTo(MapLocation loc) throws   GameActionException{
+		if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
+			Direction dir = r.rc.getLocation().directionTo(loc);
+		    if(r.rc.canMove(dir)) moveOrDefuse(dir);
+		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.  rotateRight());
+		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.  rotateLeft());
+		}
+	}
+	
+	public boolean moveOrDefuse(Direction dir) throws GameActionException{
+		MapLocation loc = r.rc.getLocation().add(dir);
+		Team mine = r.rc.senseMine(loc);
+		if (mine == r.rc.getTeam() || mine == null){
+		   r.rc.move(dir);
+		   return true;
+		}
+		r.rc.defuseMine(loc);
+		return false;
 	}
 	
 }

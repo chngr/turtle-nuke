@@ -26,6 +26,7 @@ public class SoldierRobot extends BaseRobot {
   public void run() throws GameActionException{
     fortify();
     //jam();
+    rc.yield();
   }
   
   //@@ Will be FortifyBehavior.run()
@@ -231,7 +232,7 @@ public class SoldierRobot extends BaseRobot {
 		  return true;
 	  }
 	  if(queueIdx < buildQueue.length){
-		  curWall = buildQueue[++queueIdx];
+		  curWall = buildQueue[++queueIdx]; //##!! java.lang.ArrayIndexOutOfBoundsException: 4
 		  return true;
 	  }
 	  return false;

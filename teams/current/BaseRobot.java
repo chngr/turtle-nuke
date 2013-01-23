@@ -8,7 +8,8 @@ public class BaseRobot
 	public final RobotController rc;
 	public final Utilities util;
 	public final Communicator comm;
-	public final SimpleNavigator nav;
+	public final Navigator nav; // We should put all the move functions in Navigator, i.e it should include SimpleNavigator, tunneling...
+								// They can then be called when the situation warrants, as nav.tunnelTo(loc)
 	public final Combat combat;
 	
 	// State data
@@ -32,7 +33,7 @@ public class BaseRobot
 		this.rc = myRC;
 		this.util = new Utilities(this);
 		this.comm = new Communicator(this);
-		this.nav = new SimpleNavigator(this);
+		this.nav = new Navigator(this);
 		this.combat = new Combat(this);
 		
 		// Initialize data
