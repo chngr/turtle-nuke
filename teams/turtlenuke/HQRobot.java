@@ -38,7 +38,7 @@ public class HQRobot extends BaseRobot {
       Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 
       // Need to do this first so the termination check works
-      if(rc.canMove(dir)){
+      if(rc.canMove(dir) && !util.senseHostileMine(rc.getLocation().add(dir))){ // At least one map starts with a mine towards the enemy HQ
     	  rc.spawn(dir);
 	      return true;
       }

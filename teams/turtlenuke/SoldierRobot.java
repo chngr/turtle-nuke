@@ -8,6 +8,8 @@ import battlecode.common.*;
 // - Some way of communicating breach?
 // - Minesweep neutrals first? Minesweep behavior?
 
+// CURRENT ISSUE: Getting stuck in build forever if near the map edge
+// Would get stuck in support, but always defend for now anyway
 
 public class SoldierRobot extends BaseRobot {
 	
@@ -122,8 +124,10 @@ public class SoldierRobot extends BaseRobot {
 		  } else {
 			  // All camps are (hopefully) defended; enter support mode
 			  // and replace fallen defenders (rebuild walls?)
-			  fortState = FortState.SUPPORT;
-			  support();
+//			  fortState = FortState.SUPPORT;
+//			  support();
+			  fortState = FortState.DEFENDING;
+			  defend(); // ##have no support mode, defending for now
 	      }
 	  }
   }
@@ -185,7 +189,8 @@ public class SoldierRobot extends BaseRobot {
 	  public int dirOrd;
 	  public int length;
 	  
-	  private int curIdx = 0;
+	  private int mineIdx = 0;
+	  private int campIdx = 0;
 	  
 	  WallSegment(MapLocation s, Direction d, int l){
 		  curMine = start = s;
@@ -196,8 +201,8 @@ public class SoldierRobot extends BaseRobot {
 	  }
 	  
 	  public boolean nextMine(){
-		  if(curIdx < length) {
-			  int[] deltas = mineDeltas[dirOrd][curIdx++ % 2]; // Could generalize to % appropriate deltas.length
+		  if(mineIdx < length) {
+			  int[] deltas = mineDeltas[dirOrd][mineIdx++ % 2]; // Could generalize to % appropriate deltas.length
 			  curMine = curMine.add(deltas[0],deltas[1]);
 			  return true;
 		  }
@@ -205,8 +210,9 @@ public class SoldierRobot extends BaseRobot {
 	  }
 	  
 	  public boolean nextCamp(){
-		  if(curIdx < 2*length - 2){ //##?
-			  curMine.add(wallRight);
+		  if(campIdx < 2*length - 1){ //##?
+			  campIdx++;
+			  curMine = curMine.add(wallRight);
 			  return true;
 		  }
 		  return false;

@@ -32,12 +32,12 @@ public class HQRobot extends BaseRobot {
   }
   
   // Generalize to allow choosing preferred direction
-  private boolean spawn() throws GameActionException{
+  public boolean spawn() throws GameActionException{
 
       Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 
       // Need to do this first so the termination check works
-      if(rc.canMove(dir)){
+      if(rc.canMove(dir) && !util.senseHostileMine(rc.getLocation().add(dir))){ // At least one map starts with a mine towards the enemy HQ
     	  rc.spawn(dir);
 	      return true;
       }
