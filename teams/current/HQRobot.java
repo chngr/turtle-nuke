@@ -72,15 +72,16 @@ public class HQRobot extends BaseRobot {
   
   //##
   @Override
-  protected void processMessage(char[] data, int startIdx) { }
+  protected int processMessage(char[] data, int startIdx) {
+	return 0; 
+  }
   
-  private static final int FORTIFY_MSG = 0;
+  private static final int FORTIFY_MSG = 1;
   public char[] buildFortifyMessage(){
 	  return new char[] {FORTIFY_MSG,0,0};
   }
   
   public void sendInitializeMessage(char[] data) throws GameActionException{
-	  data[0] = (char) ((data[0] & 0xF) | 16); // 1 << 4; adds initialization guard, overwriting existing guards
-	  comm.putSticky(data);
+	  comm.putSticky(-2, data);
   }
 }

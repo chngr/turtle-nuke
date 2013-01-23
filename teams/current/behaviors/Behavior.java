@@ -12,11 +12,7 @@ public abstract class Behavior {
 		this.r = r;
 	}
 	
-	public void run() throws GameActionException{
-		
-	}
-	public void checkBehaviorChange(){
-		
-	}
-
+	public abstract void checkBehaviorChange();
+	public abstract void run() throws GameActionException;
+	
 }

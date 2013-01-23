@@ -15,5 +15,5 @@ public class PassiveEncampment extends BaseRobot {
 	}
 
 	@Override
-	protected void processMessage(char[] data, int startIdx) { }
+	protected int processMessage(char[] data, int startIdx) { return 0; }
 }

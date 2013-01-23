@@ -24,13 +24,18 @@ public abstract class BaseRobot
 	public final Team myTeam;
 	public final Team enemyTeam;
 	
-	// Headquarter locations
+	// Headquarters locations
 	public final MapLocation HQ;
 	public final MapLocation eHQ;
 	
 	// State variables
 	public int curRound;
 	public MapLocation curLoc;
+	
+	// Subscribed stickyspaces
+	// If we ever need to remove subscriptions, we'll want a better data structure
+	public int[] subs;
+	public int numSubs = 0;
 
 	BaseRobot(RobotController myRC){
 		// Initialize subsystems
@@ -56,6 +61,11 @@ public abstract class BaseRobot
 		// Initialize state variables
 		this.maph = rc.getMapHeight();
 		this.mapw = rc.getMapWidth();
+		
+		// Initialize subscribed sticky spaces 
+		subs = new int[64];
+		subscribe(1); // Subscribed to general by default
+		
 	}
 	
 	public void run() throws GameActionException{
@@ -66,45 +76,25 @@ public abstract class BaseRobot
 	
 
 	// --- Message parsing ---
-	//
-	// Header byte contains guard conditions and message type
-	// Format:
-	//    4    4
-	// |guard|type|
-	// If more message types are needed, the guard could be reduced to 3 bits
-	//
-	// Messages are currently limited to a single 3 byte group (2 bytes of data)
-	// If you need more than this, split it into a separate setParam message
+	
+	protected void readAllMessages() throws GameActionException{
+		for(int i=0; i<numSubs; i++)
+			readMessages(comm.getSticky(subs[i]));
+		readMessages(comm.receive());
+	}
 	
 	protected void readMessages(char[] messageData){
 		int msgIdx = 0;
 		while(msgIdx < messageData.length){
-			if( checkGuard(messageData[msgIdx]) ){ // @ Guard is probably only relevant for sticky
-				processMessage(messageData, msgIdx);
-			}
-			msgIdx += 3;
+			msgIdx += processMessage(messageData, msgIdx);
 		}
 	}
+	// Return the length of the message
+	protected abstract int processMessage(char[] data, int startIdx);
 	
-	protected abstract void processMessage(char[] data, int startIdx);
-
-	// Return whether or not the message is for us
-	private boolean checkGuard(char header){
-		
-		// @ Instead could have bits indicate conditions, combinatorially
-		switch(header >> 4){
-		case 0: // No guard
-			break;
-		case 1: // Initialization message (HQ can't get the id of spawned robot)
-			if(age() > 1) return false;
-			return true;
-			
-		default:
-			System.out.println("Unrecognised guard condition"); //DEBUG
-		}
-		return true;
+	protected void subscribe(int stickyNum){
+		subs[numSubs++] = stickyNum;
 	}
-	
 	
 	
 	public int age(){

@@ -9,7 +9,7 @@ The [maxMsgQueueLen] consecutive channels starting at that offset is that robot'
 This implements a naive frequency-hopping scheme.
 
 Stickies are in a global messagespace called a stickyspace. I like sticky things.
-This stickyspace can be accessed by posting to id = -1.
+Stickyspaces can be accessed by posting to id = -(sticky#).
 
 Each channel contains a 32-bit packet, containing:
 |Data byte 3| |Data byte 2| |Data byte 1| |Checksum + timestamp byte|
@@ -19,6 +19,13 @@ Example (for posting to stickyspace):
 comm.receive(comm.IDtoCurFreq(-1)) receives data sent to the current round.
 comm.send(comm.IDtoNextFreq(-1), data, 3) sends 3 bytes of data to the next round.
 comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 90 rounds later.
+
+Current stickyspaces:
+1: General (everyone reads this)
+2: Initialization
+
+The maximum number of stickyspaces is 64.
+
 *************************************/
 
 
@@ -133,14 +140,12 @@ public class Communicator
 		return receive(IDtoCurFreq(r.id));
 	}
 	
-	public void putSticky(char[] data) throws GameActionException {
-		send(IDtoCurFreq(-1), data, data.length);
+	public void putSticky(int stickyNum, char[] data) throws GameActionException {
+		send(IDtoCurFreq(-stickyNum), data, data.length);
 	}
-	public char[] getSticky() throws GameActionException{
-		return receive(IDtoCurFreq(-1));
+	public char[] getSticky(int stickyNum) throws GameActionException{
+		return receive(IDtoCurFreq(-stickyNum));
 	}
-	
-
 	
 
 }
