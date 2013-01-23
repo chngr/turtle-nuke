@@ -23,7 +23,9 @@ public class TurtleNuke extends Strategy {
 	//	    	  if(defenders.length >= 9){ 
 	//	    		  rc.researchUpgrade(Upgrade.NUKE);
 	//	    	  } else {
-		    		  if(!HQ.spawn()){ //spawn failed
+		    		  if(HQ.spawn()){
+		    			  HQ.sendInitializeMessage( HQ.buildFortifyMessage() );
+		    		  } else {
 		    			  HQ.rc.researchUpgrade(Upgrade.NUKE);
 		    		  }
 		    	  //}

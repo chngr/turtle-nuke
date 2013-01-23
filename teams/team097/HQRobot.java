@@ -4,70 +4,64 @@ import battlecode.common.*;
 
 public class HQRobot extends BaseRobot {
 
-  public int spawnTimeLeft;
-  public int curSpawnDelay; // change when upgrade suppliers
-  private Upgrade[] upgrades = {Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.PICKAXE, Upgrade.VISION, Upgrade.NUKE};
-  private int upgradeNumber = 0;
-  private double spawnMinPower = GameConstants.HQ_POWER_PRODUCTION + 10; // should adjust for generators
+  
+  //@@ TurtleNuke strategy vars
+  private static final int FORTIFY_RADIUS = 2; // May want something more sophisticated, e.g. layers
+  private int stage = 0; // Strategy stage; have this?
 
   HQRobot(RobotController rc){
     super(rc);
-    spawnTimeLeft = 0;
-    curSpawnDelay = GameConstants.HQ_SPAWN_DELAY;
   }
 
+  private int turnsToPickaxe = Upgrade.PICKAXE.numRounds;
   public void run() throws GameActionException{
     if (rc.isActive()){
-      // If we're running out of power, we don't need more robots
-      if(rc.getTeamPower() > spawnMinPower){
-          spawn();
-      } else {
-        if(rc.hasUpgrade(upgrades[upgradeNumber])){
-        	upgradeNumber++;
-        }
-        rc.researchUpgrade(upgrades[upgradeNumber]);
-      }
-
-    }
-    // If inactive, check out when it is next active
-    else {
-      spawnTimeLeft--;
-      rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
-    }
-  }
-  private void spawn() throws GameActionException{
-    // Spawn a soldier
-    Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-
-    // Spawns soldier if possible to move
-    if (rc.canMove(dir)) {
-      spawnInDir(dir);
-    }
-    // Try to move around to spawn in different direction
-    else {
-      Direction dirLeft = dir;
-      Direction dirRight = dir;
-
-      while (dirRight != dirLeft) {
-        dirLeft = dirLeft.rotateLeft();
-        if (rc.canMove(dirLeft)) {
-          spawnInDir(dirLeft);
-          break;
-        }
-        else {
-          dirRight = dirRight.rotateRight();
-          if (rc.canMove(dirRight)) {
-            spawnInDir(dirRight);
-            break;
-          }
-        }
+      if(stage == 0){
+    	  rc.researchUpgrade(Upgrade.PICKAXE);
+    	  if(--turnsToPickaxe == 0) stage = 1;
+      } else if(stage == 1){
+//    	  Robot[] defenders = rc.senseNearbyGameObjects(Robot.class, 8, myTeam); //5x5; ## depends on FORTIFY_RADIUS
+//    	  if(defenders.length >= 9){ 
+//    		  rc.researchUpgrade(Upgrade.NUKE);
+//    	  } else {
+    		  if(!spawn()){ //spawn failed
+    			  rc.researchUpgrade(Upgrade.NUKE);
+    		  }
+    	  //}
+    	  // ## in actual strategy, will need to instruct new robot to defend
       }
     }
   }
+  
+  private boolean spawn() throws GameActionException{
 
-  private void spawnInDir(Direction dir) throws GameActionException{
-    rc.spawn(dir);
-    spawnTimeLeft = curSpawnDelay;
-    rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
+      Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+
+      // Need to do this first so the termination check works
+      if(rc.canMove(dir) && !util.senseHostileMine(rc.getLocation().add(dir))){ // At least one map starts with a mine towards the enemy HQ
+    	  rc.spawn(dir);
+	      return true;
+      }
+      // Spawn as close to the desired direction as possible
+	  Direction dirLeft = dir;
+	  Direction dirRight = dir;
+	
+	  do {
+		dirLeft = dirLeft.rotateLeft();
+	    if (rc.canMove(dirLeft)) {
+	      rc.spawn(dirLeft);
+	      return true;
+	    }
+	    
+	    dirRight = dirRight.rotateRight(); 
+	    if (rc.canMove(dirRight)) {
+	      rc.spawn(dirRight);
+	      return true;
+	    }
+	        
+	  } while (dirRight != dirLeft) ;
+	  
+	  return false;
   }
+
 }

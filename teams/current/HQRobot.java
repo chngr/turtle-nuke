@@ -31,30 +31,29 @@ public class HQRobot extends BaseRobot {
 	  return turtleNuke;
   }
   
+  
   // Generalize to allow choosing preferred direction
   public boolean spawn() throws GameActionException{
-
       Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 
       // Need to do this first so the termination check works
       if(rc.canMove(dir) && !util.senseHostileMine(rc.getLocation().add(dir))){ // At least one map starts with a mine towards the enemy HQ
-    	  rc.spawn(dir);
+    	  spawnInDir(dir);
 	      return true;
       }
       // Spawn as close to the desired direction as possible
 	  Direction dirLeft = dir;
-	  Direction dirRight = dir;
-	
+	  Direction dirRight = dir;	
 	  do {
 		dirLeft = dirLeft.rotateLeft();
 	    if (rc.canMove(dirLeft)) {
-	      rc.spawn(dirLeft);
+	      spawnInDir(dirLeft);
 	      return true;
 	    }
 	    
 	    dirRight = dirRight.rotateRight(); 
 	    if (rc.canMove(dirRight)) {
-	      rc.spawn(dirRight);
+	      spawnInDir(dirRight);
 	      return true;
 	    }
 	        
@@ -66,6 +65,21 @@ public class HQRobot extends BaseRobot {
   private void spawnInDir(Direction dir) throws GameActionException{
     rc.spawn(dir);
     spawnTimeLeft = curSpawnDelay;
-    rc.setIndicatorString(0, "Spawning in " + spawnTimeLeft);
+  }
+
+  
+  
+  //##
+  @Override
+  protected void processMessage(char[] data, int startIdx) { }
+  
+  private static final int FORTIFY_MSG = 0;
+  public char[] buildFortifyMessage(){
+	  return new char[] {FORTIFY_MSG,0,0};
+  }
+  
+  public void sendInitializeMessage(char[] data) throws GameActionException{
+	  data[0] = (char) ((data[0] & 0xF) | 16); // 1 << 4; adds initialization guard, overwriting existing guards
+	  comm.putSticky(data);
   }
 }

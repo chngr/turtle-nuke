@@ -25,13 +25,35 @@ public class SoldierRobot extends BaseRobot {
         currentBehavior = scoutBehavior; //default
 	}
 
+
 	public void run() throws GameActionException{
 		if (rc.isActive()) {
-			//## read messages, changing state if instructed to
+			readMessages(comm.getSticky()); // in BaseRobot
+			readMessages(comm.receive());
+			
 			currentBehavior.checkBehaviorChange();
 			currentBehavior.run();
 			//## use remaining bytecodes if we don't need to conserve power
 			rc.yield();
 		}
+	}
+	
+	@Override
+	protected void processMessage(char[] data, int startIdx){
+		switch(data[startIdx] & 0xF){
+		case 0: // Fortify: default (headquarters, radius 2, all directions)
+			setBehavior(fortifyBehavior);
+			fortifyBehavior.buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()), 4);
+			break;
+			
+		default:
+			System.out.println("Unrecognised message"); //DEBUG
+		}
+	}
+	
+	
+	private void setBehavior(Behavior b){
+		prevBehavior = currentBehavior;
+		currentBehavior = b;
 	}
 }

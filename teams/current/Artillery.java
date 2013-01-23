@@ -12,4 +12,7 @@ public class Artillery extends BaseRobot {
 	{
 		rc.suicide();
 	}
+
+	@Override
+	protected void processMessage(char[] data, int startIdx) { }
 }

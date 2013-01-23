@@ -13,4 +13,7 @@ public class PassiveEncampment extends BaseRobot {
 	{
 		rc.yield();
 	}
+
+	@Override
+	protected void processMessage(char[] data, int startIdx) { }
 }

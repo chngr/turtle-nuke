@@ -21,7 +21,9 @@ comm.send(comm.IDtoNextFreq(-1), data, 3) sends 3 bytes of data to the next roun
 comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 90 rounds later.
 *************************************/
 
+
 import battlecode.common.*;
+
 import java.util.Arrays;
 
 public class Communicator
@@ -91,7 +93,7 @@ public class Communicator
 			freq++;
 			if (i == 3 * maxMsgQueueLen) break;
 		}
-		return Arrays.copyOfRange(data, 0, i+1);
+		return Arrays.copyOfRange(data, 0, i+1); //## The copyOfRange bytecode counts as our own; ok?
 	}
 	
 	boolean isValidPacket(int packet)
@@ -119,4 +121,26 @@ public class Communicator
 		if (tmp < 0) tmp += GameConstants.BROADCAST_MAX_CHANNELS;
 		return tmp % GameConstants.BROADCAST_MAX_CHANNELS;
 	}
+	
+	
+	// Helper functions
+	public void sendToId(int id, char[] data) throws GameActionException{
+		int offset = (id < r.id) ? 1 : 0; //If they've already gone, send to next round
+		send(IDtoFreqNRoundsLater(id,offset), data, data.length);
+	}
+	
+	public char[] receive() throws GameActionException{
+		return receive(IDtoCurFreq(r.id));
+	}
+	
+	public void putSticky(char[] data) throws GameActionException {
+		send(IDtoCurFreq(-1), data, data.length);
+	}
+	public char[] getSticky() throws GameActionException{
+		return receive(IDtoCurFreq(-1));
+	}
+	
+
+	
+
 }
