@@ -4,6 +4,11 @@ import current.*;
 import battlecode.common.*;
 
 
+// Notes (Paul)
+// - The HQ would probably like to be able to request a certain encampment type
+// - There is now an (pretty much empty) Travel behavior, which may or may not be useful
+//   given that we might need to check if our goal is still valid
+
 /*****************************************************************************
  * Capture Behaviour --- Basic Encampment Capturing.
  *
@@ -35,6 +40,13 @@ public class CaptureBehavior extends Behavior {
   public CaptureBehavior(SoldierRobot r){
     super(r);
   }
+  
+  
+  public void checkBehaviorChange() {
+  	// TODO Auto-generated method stub
+  	
+  }
+  
 
   public void run() throws GameActionException{
     if(goalSet){
@@ -103,4 +115,5 @@ public class CaptureBehavior extends Behavior {
       return RobotType.SUPPLIER;
     }
   }
+
 }
