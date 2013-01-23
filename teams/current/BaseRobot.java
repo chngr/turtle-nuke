@@ -73,7 +73,7 @@ public abstract class BaseRobot
 	// |guard|type|
 	// If more message types are needed, the guard could be reduced to 3 bits
 	//
-	// Messages are limited to a single 3 byte group (2 bytes of data)
+	// Messages are currently limited to a single 3 byte group (2 bytes of data)
 	// If you need more than this, split it into a separate setParam message
 	
 	protected void readMessages(char[] messageData){

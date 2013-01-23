@@ -3,6 +3,7 @@ package current;
 import current.strategies.*;
 import battlecode.common.*;
 
+
 public class HQRobot extends BaseRobot {
 
   public int spawnTimeLeft;
