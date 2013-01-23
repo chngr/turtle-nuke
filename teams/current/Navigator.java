@@ -19,6 +19,8 @@ import battlecode.common.*;
 
 // SEARCH:
 //TODO: !!! Do the next search (centered at the current goal location) while moving !!!
+// - Should start with a shallow search or delegate to another movement method
+//   while first search is in progress
 
 //TODO:@1 other robots
 //TODO: map edges
