@@ -231,7 +231,7 @@ public class SoldierRobot extends BaseRobot {
 	  if(curWall.nextMine()){
 		  return true;
 	  }
-	  if(queueIdx < buildQueue.length){
+	  if(queueIdx < buildQueue.length-1){
 		  curWall = buildQueue[++queueIdx]; //##!! java.lang.ArrayIndexOutOfBoundsException: 4
 		  return true;
 	  }
@@ -249,7 +249,7 @@ public class SoldierRobot extends BaseRobot {
 	  if(curWall.nextCamp()){
 		  return true;
 	  }
-	  if(queueIdx < buildQueue.length){ //## using same vars as build; I guess?
+	  if(queueIdx < buildQueue.length-1){ //## using same vars as build; I guess?
 		  curWall = buildQueue[++queueIdx];
 		  return true;
 	  }
