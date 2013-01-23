@@ -15,7 +15,7 @@ public abstract class Strategy {
 		
 	}
 	
-	public void run() {
+	public void run() throws GameActionException {
 		
 	}
 	
