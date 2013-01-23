@@ -5,14 +5,14 @@ import battlecode.common.*;
 
 public class SoldierRobot extends BaseRobot {
 	
-	private Behavior currentBehavior;
-	private Behavior prevBehavior;
+	public Behavior currentBehavior;
+	public Behavior prevBehavior;
 	
-	private CombatBehavior combatBehavior;
-	private CaptureBehavior captureBehavior;
-	private SwarmBehavior swarmBehavior; // This should maybe be a slow creep, not a blind rush; or that could be a different behavior
-	private FortifyBehavior fortifyBehavior;
-	private ScoutBehavior scoutBehavior;
+	public CombatBehavior combatBehavior;
+	public CaptureBehavior captureBehavior;
+	public SwarmBehavior swarmBehavior; // This should maybe be a slow creep, not a blind rush; or that could be a different behavior
+	public FortifyBehavior fortifyBehavior;
+	public ScoutBehavior scoutBehavior;
 
 	
 	SoldierRobot(RobotController rc){
@@ -52,7 +52,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	
-	private void setBehavior(Behavior b){
+	public void setBehavior(Behavior b){
 		prevBehavior = currentBehavior;
 		currentBehavior = b;
 	}

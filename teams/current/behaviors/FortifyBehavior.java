@@ -16,7 +16,7 @@ import battlecode.common.*;
 public class FortifyBehavior extends Behavior {
 
 	private enum FortState { BUILDING, SEEKING_CAMP, DEFENDING, SUPPORT };
-	private FortState fortState;
+	private FortState state;
 	  
 	private WallSegment[] buildQueue; //## at top
 	private WallSegment curWall;
@@ -28,13 +28,14 @@ public class FortifyBehavior extends Behavior {
 	
 	
     public void checkBehaviorChange(){
-		
+    	// ## combat currently throwing null pointer exceptions, consistently at line 137
+		// if(state != FortState.DEFENDING && r.util.senseDanger()) r.setBehavior(r.combatBehavior); 
 	}
 	
 	public void run() throws GameActionException{
-		//r.rc.setIndicatorString(0, fortState.toString()); //DEBUG
+		//r.rc.setIndicatorString(0, state.toString()); //DEBUG
 		if(r.rc.isActive()){  
-		    switch(fortState) {
+		    switch(state) {
 		        case BUILDING:
 		            build();
 		            break;
@@ -81,7 +82,7 @@ public class FortifyBehavior extends Behavior {
     private void initBuild(){
         resetProgress();
         curWall = buildQueue[0];
-        fortState = FortState.BUILDING;
+        state = FortState.BUILDING;
     }
     private void resetProgress(){
         //## all important state vars
@@ -102,7 +103,7 @@ public class FortifyBehavior extends Behavior {
   		  if(buildTarget != null){
   			  r.nav.tunnelTo(buildTarget);
   		  } else {
-  			  fortState = FortState.SEEKING_CAMP;
+  			  state = FortState.SEEKING_CAMP;
   			  queueIdx = 0; // Reset these, as seekCamp uses them; I guess?
   			  curWall = buildQueue[0];
   			  seekCamp();
@@ -113,7 +114,7 @@ public class FortifyBehavior extends Behavior {
     private MapLocation campTarget;
     private void seekCamp() throws GameActionException{
   	  if(r.rc.getLocation().equals(campTarget)){
-  		  fortState = FortState.DEFENDING;
+  		  state = FortState.DEFENDING;
   		  defend();
   	  }	  
   	  else {
@@ -123,9 +124,9 @@ public class FortifyBehavior extends Behavior {
   		  } else {
 			  // All camps are (hopefully) defended; enter support mode
 			  // and replace fallen defenders (rebuild walls?)
-//			  fortState = FortState.SUPPORT;
+//			  state = FortState.SUPPORT;
 //			  support();
-			  fortState = FortState.DEFENDING;
+			  state = FortState.DEFENDING;
 			  defend(); // ##have no support mode, defending for now
   	      }
   	  }

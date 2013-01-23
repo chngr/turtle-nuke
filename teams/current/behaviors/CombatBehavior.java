@@ -15,6 +15,6 @@ public class CombatBehavior extends Behavior {
 	}
 	
 	public void checkBehaviorChange(){
-		
+		if(!r.util.senseDanger()) r.setBehavior(r.prevBehavior);
 	}
 }

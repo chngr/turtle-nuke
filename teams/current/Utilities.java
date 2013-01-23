@@ -80,4 +80,9 @@ public class Utilities {
 		Team mine_team = r.rc.senseMine(location);
 		return !(mine_team == null || mine_team == r.myTeam);
 	}
+	
+	// Somewhat arbitrary range
+	public boolean senseDanger(){
+		return r.rc.senseNearbyGameObjects(Robot.class, 33, r.enemyTeam).length > 0;
+	}
 }
