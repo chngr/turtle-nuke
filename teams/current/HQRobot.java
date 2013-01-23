@@ -31,7 +31,7 @@ public class HQRobot extends BaseRobot {
 	  return turtleNuke;
   }
   
-  // Generalize to allow preferred direction
+  // Generalize to allow choosing preferred direction
   private boolean spawn() throws GameActionException{
 
       Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
@@ -42,22 +42,23 @@ public class HQRobot extends BaseRobot {
 	      return true;
       }
       // Spawn as close to the desired direction as possible
-	  Direction dirLeft = dir.rotateLeft();
-	  Direction dirRight = dir.rotateRight();
+	  Direction dirLeft = dir;
+	  Direction dirRight = dir;
 	
-	  while (dirRight != dirLeft) {    
+	  do {
+		dirLeft = dirLeft.rotateLeft();
 	    if (rc.canMove(dirLeft)) {
 	      rc.spawn(dirLeft);
 	      return true;
 	    }
-	    dirLeft = dirLeft.rotateLeft();
-	      
+	    
+	    dirRight = dirRight.rotateRight(); 
 	    if (rc.canMove(dirRight)) {
 	      rc.spawn(dirRight);
 	      return true;
 	    }
-	    dirRight = dirRight.rotateRight();     
-	  }
+	        
+	  } while (dirRight != dirLeft) ;
 	  
 	  return false;
   }

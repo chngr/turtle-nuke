@@ -18,6 +18,7 @@ Current square attributes:
 import battlecode.common.*;
 
 // SEARCH:
+// *** I think there might be unmerged bugfixes and improvements in test
 //TODO: !!! Do the next search (centered at the current goal location) while moving !!!
 // - Should start with a shallow search or delegate to another movement method
 //   while first search is in progress

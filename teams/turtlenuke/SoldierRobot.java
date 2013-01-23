@@ -8,6 +8,7 @@ import battlecode.common.*;
 // - Some way of communicating breach?
 // - Minesweep neutrals first? Minesweep behavior?
 
+
 public class SoldierRobot extends BaseRobot {
 	
   
@@ -31,7 +32,7 @@ public class SoldierRobot extends BaseRobot {
   
   //@@ Will be FortifyBehavior.run()
   private void fortify() throws GameActionException {
-	  
+	  rc.setIndicatorString(0, fortState.toString()); //DEBUG
 	  // set home location when at fortification?
 	  if(rc.isActive()){  
 		  switch(fortState) {
@@ -93,6 +94,7 @@ public class SoldierRobot extends BaseRobot {
   private void build() throws GameActionException{
 	  if(rc.getLocation().equals(buildTarget)){
 		  rc.layMine();
+		  buildTarget = getBuildSpot();
 	  }	  
 	  else {
 		  buildTarget = getBuildSpot(); // improvement: don't do this every time
@@ -109,7 +111,7 @@ public class SoldierRobot extends BaseRobot {
   
   private MapLocation campTarget;
   private void seekCamp() throws GameActionException{
-	  if(rc.getLocation().equals(buildTarget)){
+	  if(rc.getLocation().equals(campTarget)){
 		  fortState = FortState.DEFENDING;
 		  defend();
 	  }	  
@@ -130,7 +132,7 @@ public class SoldierRobot extends BaseRobot {
   private Robot defuser;
   private void defend() throws GameActionException{
 	  if(defuser != null) {	 // Engaged
-		  if(rc.senseRobotInfo(defuser).roundsUntilAttackIdle == 0){ //## correct? also, what if the robot is dead?
+		  if(!rc.canSenseObject(defuser) || rc.senseRobotInfo(defuser).roundsUntilAttackIdle == 0){ //## correct? also, what if the robot is dead?
 			  defuser = null;
 			  if(rc.canMove(dirToCamp)){
 				  rc.move(dirToCamp);
@@ -179,7 +181,7 @@ public class SoldierRobot extends BaseRobot {
 	  public MapLocation start;
 	  public MapLocation curMine;
 	  public MapLocation curCamp;
-	  public Direction dir;
+	  public Direction wallRight; // Parallel to the wall, your right if you're inside it
 	  public int dirOrd;
 	  public int length;
 	  
@@ -187,8 +189,8 @@ public class SoldierRobot extends BaseRobot {
 	  
 	  WallSegment(MapLocation s, Direction d, int l){
 		  curMine = start = s;
-		  curCamp = s.add(d.rotateRight());
-		  dir = d;
+		  wallRight = d.rotateRight().rotateRight();
+		  curCamp = s.add(wallRight.rotateRight()); //Interior edge
 		  dirOrd = dirIdx(d);
 		  length = l;
 	  }
@@ -204,7 +206,7 @@ public class SoldierRobot extends BaseRobot {
 	  
 	  public boolean nextCamp(){
 		  if(curIdx < 2*length - 2){ //##?
-			  curMine.add(dir);
+			  curMine.add(wallRight);
 			  return true;
 		  }
 		  return false;
@@ -232,7 +234,7 @@ public class SoldierRobot extends BaseRobot {
 		  return true;
 	  }
 	  if(queueIdx < buildQueue.length-1){
-		  curWall = buildQueue[++queueIdx]; //##!! java.lang.ArrayIndexOutOfBoundsException: 4
+		  curWall = buildQueue[++queueIdx];
 		  return true;
 	  }
 	  return false;
