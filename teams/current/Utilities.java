@@ -19,6 +19,8 @@ public class Utilities {
 		this.r = robot;
 	}
 	
+	// ## Math.random() is not random in battlecode - all robots will be the same
+	// ## If we need randomness, we should write our own, or use e.g. 2012 team's
 	public int genRandFromClosedInterval(int min, int max){
 		return (int)(min + Math.random() * (max - min));
 	}
@@ -84,5 +86,19 @@ public class Utilities {
 	// Somewhat arbitrary range
 	public boolean senseDanger(){
 		return r.rc.senseNearbyGameObjects(Robot.class, 33, r.enemyTeam).length > 0;
+	}
+	
+	// Calculate roughly how close a location is to the line between the HQs
+	public float calculateCentrality(MapLocation loc){
+		int hdx = r.HQ.x - r.eHQ.x, hdy = r.HQ.y - r.eHQ.y,
+			ldx = r.HQ.x - loc.x,   ldy = r.HQ.y - loc.y;
+		if(hdx*ldx < 0 && hdy*ldy < 0){ // Wrong side of HQ
+			return getDistanceBetween(r.HQ,loc);
+		}
+		return Math.abs(hdx/hdy - ldx/ldy) * getDistanceBetween(r.HQ,loc);
+	}
+	
+	public boolean inMap(MapLocation loc){
+		return (0 <= loc.x) && (loc.x <= r.mapw) && (0 <= loc.y) && (loc.y <= r.maph); 
 	}
 }
