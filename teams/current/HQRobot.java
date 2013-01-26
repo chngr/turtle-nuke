@@ -25,6 +25,7 @@ public class HQRobot extends BaseRobot {
   }
 
   public void run() throws GameActionException {
+	  super.run();
 	  currentStrategy.checkStrategyChange();//## periodically?
 	  currentStrategy.run();
   }

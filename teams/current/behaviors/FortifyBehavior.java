@@ -10,7 +10,7 @@ import battlecode.common.*;
 //- Some way of communicating breach?
 //- Minesweep neutrals first? Minesweep behavior?
 
-//CURRENT ISSUES: - Get stuck in support when should be in defend
+//CURRENT ISSUES: - Get stuck in support when should be in defend (hacked to always enter defend)
 //				  - Defend doesn't work for larger fortifications (same as above?)
 
 public class FortifyBehavior extends Behavior {
@@ -28,8 +28,7 @@ public class FortifyBehavior extends Behavior {
 	
 	
     public void checkBehaviorChange(){
-    	// ## combat currently throwing null pointer exceptions, consistently at line 137
-		// if(state != FortState.DEFENDING && r.util.senseDanger()) r.setBehavior(r.combatBehavior); 
+		 if(state != FortState.DEFENDING && r.util.senseDanger()) r.setBehavior(r.combatBehavior); 
 	}
 	
 	public void run() throws GameActionException{
@@ -124,10 +123,10 @@ public class FortifyBehavior extends Behavior {
   		  } else {
 			  // All camps are (hopefully) defended; enter support mode
 			  // and replace fallen defenders (rebuild walls?)
-			  state = FortState.SUPPORT;
-			  support();
-//			  state = FortState.DEFENDING;
-//			  defend(); // ##have no support mode, defending for now
+//			  state = FortState.SUPPORT;
+//			  support();
+			  state = FortState.DEFENDING;
+			  defend(); // ##have no support mode, defending for now
   	      }
   	  }
     }

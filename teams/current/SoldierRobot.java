@@ -33,6 +33,7 @@ public class SoldierRobot extends BaseRobot {
 
 
 	public void run() throws GameActionException{
+		super.run();
 		if (rc.isActive()) {
 			readAllMessages(); // in BaseRobot
 			
