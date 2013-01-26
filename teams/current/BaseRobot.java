@@ -47,7 +47,7 @@ public abstract class BaseRobot
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();
-		this.spawnRound = Clock.getRoundNum();
+		this.spawnRound = this.curRound = Clock.getRoundNum();
 		this.myType = rc.getType();
 		
 		// Initialize team objects
@@ -85,7 +85,7 @@ public abstract class BaseRobot
 	
 	protected void readMessages(char[] messageData){
 		int msgIdx = 0;
-		while(msgIdx < messageData.length){
+		while(msgIdx < messageData.length-1){
 			msgIdx += processMessage(messageData, msgIdx);
 		}
 	}

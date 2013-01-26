@@ -124,10 +124,10 @@ public class FortifyBehavior extends Behavior {
   		  } else {
 			  // All camps are (hopefully) defended; enter support mode
 			  // and replace fallen defenders (rebuild walls?)
-//			  state = FortState.SUPPORT;
-//			  support();
-			  state = FortState.DEFENDING;
-			  defend(); // ##have no support mode, defending for now
+			  state = FortState.SUPPORT;
+			  support();
+//			  state = FortState.DEFENDING;
+//			  defend(); // ##have no support mode, defending for now
   	      }
   	  }
     }
@@ -225,7 +225,7 @@ public class FortifyBehavior extends Behavior {
     }
     
     private MapLocation getBuildSpot() throws GameActionException{
-  	  while(!needsMine(curWall.curMine) || occupied(curWall.curMine)){
+  	  while(!needsMine(curWall.curMine) || occupied(curWall.curMine) || !r.util.inMap(curWall.curMine)){
   		  if(!nextWallLoc()) return null; // Updates curWall/curMine; returns null when done building
   	  }
   	  return curWall.curMine;
@@ -249,7 +249,7 @@ public class FortifyBehavior extends Behavior {
    
     // Basically a duplicate of build spot logic; not sure how to combine
     private MapLocation getCamp() throws GameActionException{
-  	  while(occupied(curWall.curCamp)){
+  	  while(occupied(curWall.curCamp) || !r.util.inMap(curWall.curCamp)){
   		  if(!nextCampLoc()) return null; // Updates curWall/curLoc; returns null when done building
   	  }
   	  return curWall.curCamp;

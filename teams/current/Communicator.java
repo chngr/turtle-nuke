@@ -31,13 +31,14 @@ The maximum number of stickyspaces is 64.
 
 import battlecode.common.*;
 
+
 import java.util.Arrays;
 
 public class Communicator
 {
 	private BaseRobot r;
 	
-	// These constansts have been carefully chosen, please do not change!
+	// These constants have been carefully chosen, please do not change!
 	private static final int maxMsgQueueLen = 64;
 		// measured in number of channels, e.g. 4 len = 12 chars = 96 bits
 		// DO NOT SET THIS TO LARGER THAN 64, OTHERWISE CHANNELS WILL OVERLAP.
@@ -46,6 +47,8 @@ public class Communicator
 		// Should be smaller than maxMsgQueueLen / 2
 		
 	private static final char magicChecksumVal = (char)0xB1;
+	
+	private static final int timeToLive = 1; // Needs to be at least 1 so that we can send to all robots at once
 	
 	Communicator(BaseRobot robot)
 	{
@@ -74,7 +77,7 @@ public class Communicator
 			// Three data bytes (with MSB last to speed up receiving)
 			packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
 			// Add a checksum as the last byte
-			packet |= c1 ^ c2 ^ c3 ^ ((r.curRound + 1) & 0xFF) ^ magicChecksumVal;
+			packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF) ^ magicChecksumVal;
 			r.rc.broadcast(i, packet);
 		}
 	}
@@ -88,6 +91,7 @@ public class Communicator
 
 		while(isValidPacket(packet = r.rc.readBroadcast(freq)))
 		{
+			//r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
 			packet >>= 8;	// First character (discarding checksum)
 			data[i++] = (char)(packet & 0xFF);
 
@@ -100,18 +104,24 @@ public class Communicator
 			freq++;
 			if (i == 3 * maxMsgQueueLen) break;
 		}
+//		r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
+//		//DEBUG
+//		String msgs = "Recieved: ";
+//		for(int j=0; j<i;j++) msgs += ((int)data[j])+"|";
+//		r.rc.setIndicatorString(1, msgs);
+		
 		return Arrays.copyOfRange(data, 0, i+1); //## The copyOfRange bytecode counts as our own; ok?
 	}
 	
 	boolean isValidPacket(int packet)
 	{
-		//Efficiency note: some of this casting is probably unnecessary
 		char checksum = (char) (packet & 0xFF);
 		checksum ^= (char)((packet & 0xFF000000) >> 24);
 		checksum ^= (char)((packet & 0x00FF0000) >> 16);
 		checksum ^= (char)((packet & 0x0000FF00) >> 8);
-		checksum ^= (char)(r.curRound & 0xFF);
-		return (checksum == magicChecksumVal);
+		checksum ^= magicChecksumVal;
+		int age = (r.curRound & 0xFF) - checksum;
+		return (age < 0 ? age + 0xFF : age) < timeToLive;
 	}
 	
 	public int IDtoCurFreq(int id)
@@ -142,9 +152,14 @@ public class Communicator
 	
 	public void putSticky(int stickyNum, char[] data) throws GameActionException {
 		send(IDtoCurFreq(-stickyNum), data, data.length);
+		r.rc.setIndicatorString(1, "Writing to "+IDtoCurFreq(-stickyNum)); //DEBUG
+//		r.rc.setIndicatorString(2, Integer.toString((int)data[0])+":"+Integer.toString((int)data[1])+":"+Integer.toString((int)data[2]));
 	}
 	public char[] getSticky(int stickyNum) throws GameActionException{
-		return receive(IDtoCurFreq(-stickyNum));
+		r.rc.setIndicatorString(1,"Reading from "+IDtoCurFreq(-stickyNum));
+		char[] data = receive(IDtoCurFreq(-stickyNum)); //DEBUG
+		//r.rc.setIndicatorString(2, Integer.toString((int)data[0]));
+		return data;
 	}
 	
 

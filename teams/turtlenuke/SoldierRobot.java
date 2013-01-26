@@ -23,7 +23,7 @@ public class SoldierRobot extends BaseRobot {
   SoldierRobot(RobotController rc){
     super(rc);
     MapLocation HQ = rc.senseHQLocation();
-    buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()), 4);
+    buildFort(HQ, 4, HQ.directionTo(rc.senseEnemyHQLocation()), 2);
   }
 
   public void run() throws GameActionException{

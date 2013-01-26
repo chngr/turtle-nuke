@@ -43,13 +43,20 @@ public class SoldierRobot extends BaseRobot {
 	// Return the length of the message
 	@Override
 	protected int processMessage(char[] data, int startIdx){
+		
 		switch(data[startIdx]){
-		case 0: // Subscribe
+		case 0:
+			// HACK: this seems to get called ~40 times/round (when we have no data?), so break the message read
+			// loop when it happens. Doesn't appear to mess with proper messages.
+			return data.length; 
+					
+		case 1:  // Subscribe
 			subscribe(data[startIdx+1]);
+			break;
 			
-		case 1: // Fortify: default (headquarters, radius 2, all directions)
+		case 2: // Fortify: default (headquarters, radius 4, two directions)
 			setBehavior(fortifyBehavior);
-			fortifyBehavior.buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()), 4);
+			fortifyBehavior.buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()).rotateLeft().rotateLeft(), 3);
 			break;
 			
 		default:

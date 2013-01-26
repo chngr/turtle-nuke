@@ -76,12 +76,13 @@ public class HQRobot extends BaseRobot {
 	return 0; 
   }
   
-  private static final int FORTIFY_MSG = 1;
+  private static final int FORTIFY_MSG = 2;
   public char[] buildFortifyMessage(){
 	  return new char[] {FORTIFY_MSG,0,0};
   }
   
   public void sendInitializeMessage(char[] data) throws GameActionException{
-	  comm.putSticky(-2, data);
+	  //System.out.println("Sending:"+Integer.toString((int)data[0])); //DEBUG
+	  comm.putSticky(2, data);
   }
 }
