@@ -3,6 +3,8 @@ package current.strategies;
 import current.*;
 import battlecode.common.*;
 
+// Notes: this should be something like the team "Vegan Police"
+
 public class TurtleNuke extends Strategy {
 
 	private static final int FORTIFY_RADIUS = 2; // May want something more sophisticated, e.g. layers ## not currently used
@@ -32,6 +34,19 @@ public class TurtleNuke extends Strategy {
 		    	  // ## instruct new robot to fortify
 		     }
 		 }
+	}
+	
+	@Override
+	public void checkStrategyChange() throws GameActionException {
+		if(HQ.rc.senseEnemyNukeHalfDone() && HQ.rc.checkResearchProgress(Upgrade.NUKE) < Upgrade.NUKE.numRounds/2)
+			HQ.setStrategy(HQ.rush);
+			HQ.rush.researchDefusion = true; //##maybe?
+	}
+
+	@Override
+	public void begin() {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

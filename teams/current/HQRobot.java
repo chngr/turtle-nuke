@@ -10,20 +10,22 @@ public class HQRobot extends BaseRobot {
   public int curSpawnDelay = 10; // change when upgrade suppliers
   
   
-  private Strategy currentStrategy;
+  public Strategy currentStrategy;
   
   // Strategies
-  private TurtleNuke turtleNuke;
+  public TurtleNuke turtleNuke;
+  public Rush rush;
   
 
   HQRobot(RobotController rc){
     super(rc);
     turtleNuke = new TurtleNuke(this);
+    rush = new Rush(this);
     currentStrategy = pickStrategy();
   }
 
   public void run() throws GameActionException {
-	  //## periodically check if we should change our strategy
+	  currentStrategy.checkStrategyChange();//## periodically?
 	  currentStrategy.run();
   }
   
@@ -81,8 +83,19 @@ public class HQRobot extends BaseRobot {
 	  return new char[] {FORTIFY_MSG,0,0};
   }
   
+  private static final int RUSH_MSG = 3;
+  public char[] buildRushMessage(){
+	  return new char[] {RUSH_MSG,0,0};
+  }
+  
   public void sendInitializeMessage(char[] data) throws GameActionException{
 	  //System.out.println("Sending:"+Integer.toString((int)data[0])); //DEBUG
 	  comm.putSticky(2, data);
+  }
+  
+  
+  public void setStrategy(Strategy s) throws GameActionException{
+	  currentStrategy = s;
+	  s.begin();
   }
 }

@@ -35,7 +35,7 @@ public class TravelBehavior extends Behavior {
 	}
 	
 	public void run() throws GameActionException {
-		// TODO Auto-generated method stub	
+		r.nav.tunnelTo(destination); //##
 	}
 
 	

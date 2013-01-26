@@ -11,13 +11,8 @@ public abstract class Strategy {
 		this.HQ = HQ;
 	}
 
-	public void evaluatePerformance(){
-		
-	}
-	
-	public void run() throws GameActionException {
-		
-	}
-	
+	public abstract void checkStrategyChange() throws GameActionException;
+	public abstract void begin() throws GameActionException;
+	public abstract void run() throws GameActionException ;
 	
 }

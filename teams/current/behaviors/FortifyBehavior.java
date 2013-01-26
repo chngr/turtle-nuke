@@ -10,8 +10,8 @@ import battlecode.common.*;
 //- Some way of communicating breach?
 //- Minesweep neutrals first? Minesweep behavior?
 
-//CURRENT ISSUE: Getting stuck in build forever if near the map edge
-// ** Would get stuck in support, but always defend for now anyway
+//CURRENT ISSUES: - Get stuck in support when should be in defend
+//				  - Defend doesn't work for larger fortifications (same as above?)
 
 public class FortifyBehavior extends Behavior {
 

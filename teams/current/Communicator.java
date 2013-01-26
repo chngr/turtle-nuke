@@ -91,7 +91,7 @@ public class Communicator
 
 		while(isValidPacket(packet = r.rc.readBroadcast(freq)))
 		{
-			//r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
+			r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
 			packet >>= 8;	// First character (discarding checksum)
 			data[i++] = (char)(packet & 0xFF);
 
@@ -104,7 +104,6 @@ public class Communicator
 			freq++;
 			if (i == 3 * maxMsgQueueLen) break;
 		}
-//		r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
 //		//DEBUG
 //		String msgs = "Recieved: ";
 //		for(int j=0; j<i;j++) msgs += ((int)data[j])+"|";
@@ -115,6 +114,8 @@ public class Communicator
 	
 	boolean isValidPacket(int packet)
 	{
+		if(packet == 0) return false; // Only 256 possible values, so on some round 0 validates. Causes problems.
+		
 		char checksum = (char) (packet & 0xFF);
 		checksum ^= (char)((packet & 0xFF000000) >> 24);
 		checksum ^= (char)((packet & 0x00FF0000) >> 16);
@@ -152,11 +153,11 @@ public class Communicator
 	
 	public void putSticky(int stickyNum, char[] data) throws GameActionException {
 		send(IDtoCurFreq(-stickyNum), data, data.length);
-		r.rc.setIndicatorString(1, "Writing to "+IDtoCurFreq(-stickyNum)); //DEBUG
+//		r.rc.setIndicatorString(1, "Writing to "+IDtoCurFreq(-stickyNum)); //DEBUG
 //		r.rc.setIndicatorString(2, Integer.toString((int)data[0])+":"+Integer.toString((int)data[1])+":"+Integer.toString((int)data[2]));
 	}
 	public char[] getSticky(int stickyNum) throws GameActionException{
-		r.rc.setIndicatorString(1,"Reading from "+IDtoCurFreq(-stickyNum));
+//		r.rc.setIndicatorString(1,"Reading from "+IDtoCurFreq(-stickyNum));
 		char[] data = receive(IDtoCurFreq(-stickyNum)); //DEBUG
 		//r.rc.setIndicatorString(2, Integer.toString((int)data[0]));
 		return data;
