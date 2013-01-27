@@ -83,9 +83,8 @@ public class Utilities {
 		return !(mine_team == null || mine_team == r.myTeam);
 	}
 	
-	// Somewhat arbitrary range
 	public boolean senseDanger(){
-		return r.rc.senseNearbyGameObjects(Robot.class, 33, r.enemyTeam).length > 0;
+		return r.rc.senseNearbyGameObjects(Robot.class, 14, r.enemyTeam).length > 0; //##increase rad (33?) when combat can handle 
 	}
 	
 	// Calculate roughly how close a location is to the line between the HQs

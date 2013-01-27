@@ -1,4 +1,4 @@
-package swcombat;
+package swAltCombat;
 
 /*
 A collection of useful algorithms!
@@ -84,8 +84,8 @@ public class Utilities {
 	}
 	
 	// Somewhat arbitrary range
-	public boolean senseDanger(){
-		return r.rc.senseNearbyGameObjects(Robot.class, 33, r.enemyTeam).length > 0;
+	public boolean senseDanger(int rad){
+		return r.rc.senseNearbyGameObjects(Robot.class, rad, r.enemyTeam).length > 0;
 	}
 	
 	// Calculate roughly how close a location is to the line between the HQs

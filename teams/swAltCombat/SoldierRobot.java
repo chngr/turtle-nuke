@@ -1,4 +1,4 @@
-package swcombat;
+package swAltCombat;
 
 import battlecode.common.*;
 
@@ -25,7 +25,7 @@ public class SoldierRobot extends BaseRobot {
 	eHQ = rc.senseEnemyHQLocation(); 
 	target = new MapLocation((3*HQ.x+eHQ.x)/4, (3*HQ.y+eHQ.y)/4);
 	
-	rushDist = util.getDistanceBetween(HQ, eHQ)/2;
+	rushDist = 5;
 	//combat.setClumpingFactor(10);
 	//combat.setHostilityFactor(1);
 	
@@ -48,7 +48,7 @@ public class SoldierRobot extends BaseRobot {
 	
     if (rc.isActive()) {
     	
-      if(util.senseDanger() && util.getDistanceBetween(rc.getLocation(), eHQ) > rushDist){
+      if(util.senseDanger(14) && util.getDistanceBetween(rc.getLocation(), eHQ) > rushDist){
         this.combat.fight();
       }
       else {

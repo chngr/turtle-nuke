@@ -3,9 +3,7 @@ package current;
 import current.behaviors.*;
 import battlecode.common.*;
 
-//## !! ONLY ACTING EVERY 2 ROUNDS; WTF? !!
-// Some robots glitch at round 178, regardless of map : 10000 bytecodes, receive 0 packet that validates (??)
-// When reading from 62462; others probably only don't glitch because they're on their off round, other bug
+
 public class SoldierRobot extends BaseRobot {
 	
 	public Behavior currentBehavior;
@@ -46,7 +44,7 @@ public class SoldierRobot extends BaseRobot {
 	// Return the length of the message
 	@Override
 	protected int processMessage(char[] data, int startIdx){
-		System.out.println("Recieved message: header "+(int)data[startIdx]);
+		//System.out.println("Recieved message: header "+(int)data[startIdx]); //DEBUG
 		switch(data[startIdx]){
 		case 0:
 			// HACK: this seems to get called ~40 times/round (when we have no data?), so break the message read

@@ -1,4 +1,4 @@
-package current;
+package swAltCombat;
 
 /**********************************
 Combat.java - Combat interface
@@ -17,7 +17,6 @@ function.
 // Notes: If there are very many enemies in range, this might timeout; we may want to add
 // a check for that, or just accept our inevitable doom.
 
-//TODO: Better mine handling
 //TODO: Special case encampments (particularly artillery) and enemy HQ
 //TODO: If no enemies in normal range, but combat engaged (presumably due to further enemy detected by ally),
 //		find a far enemy to approach 

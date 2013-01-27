@@ -20,6 +20,7 @@ public class TravelBehavior extends Behavior {
 	
 	public TravelBehavior(SoldierRobot r) {
 		super(r);
+		enemyResponse = EnemyResponse.ENGAGE; //default
 	}
 
 	public void checkBehaviorChange() {
