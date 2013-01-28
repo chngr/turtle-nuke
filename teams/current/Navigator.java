@@ -298,11 +298,17 @@ public class Navigator {
 	// Useful if the path is going to be traveled often, or we don't want mines there
 	
     public void tunnelTo(MapLocation loc) throws   GameActionException{
+    	Direction dir = r.curLoc.directionTo(loc);
+    	
+    	//## !! other movements want this !!
+    	if(r.util.senseHostileMine(r.curLoc)){ // Stepped on undetected enemy mine
+    		moveNear(dir); // Make sure we move, not defuse
+    		return;
+    	}
 		if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
-			Direction dir = r.rc.getLocation().directionTo(loc);
 		    if(r.rc.canMove(dir)) moveOrDefuse(dir);
-		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.  rotateRight());
-		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.  rotateLeft());
+		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
+		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
 		}
 	}
 	
@@ -315,6 +321,35 @@ public class Navigator {
 		}
 		r.rc.defuseMine(loc);
 		return false;
+	}
+	
+	// Move as close to the dir as possible, but always move if possible
+	public boolean moveNear(Direction dir) throws GameActionException{
+
+	      // Need to do this first so the termination check works
+	      if(r.rc.canMove(dir) && !r.util.senseHostileMine(r.curLoc.add(dir))){
+	    	  r.rc.move(dir);
+		      return true;
+	      }
+	      // Move as close to the desired direction as possible
+		  Direction dirLeft = dir;
+		  Direction dirRight = dir;	
+		  do {
+			dirLeft = dirLeft.rotateLeft();
+		    if (r.rc.canMove(dirLeft) && !r.util.senseHostileMine(r.curLoc.add(dirLeft))) {
+		      r.rc.move(dirLeft);
+		      return true;
+		    }
+		    
+		    dirRight = dirRight.rotateRight(); 
+		    if (r.rc.canMove(dirRight)  && !r.util.senseHostileMine(r.curLoc.add(dirRight))) {
+		      r.rc.move(dirRight);
+		      return true;
+		    }
+		        
+		  } while (dirRight != dirLeft) ;
+		  
+		  return false;
 	}
 	
 }

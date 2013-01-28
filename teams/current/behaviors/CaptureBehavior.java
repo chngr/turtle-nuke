@@ -4,11 +4,6 @@ import current.*;
 import battlecode.common.*;
 
 
-// Notes (Paul)
-// - The HQ would probably like to be able to request a certain encampment type
-// - There is now an (pretty much empty) Travel behavior, which may or may not be useful
-//   given that we might need to check if our goal is still valid
-
 /*****************************************************************************
  * Capture Behaviour --- Basic Encampment Capturing.
  *
@@ -34,8 +29,12 @@ import battlecode.common.*;
  *  The behaviour then returns to the soldierRobot base to run post behaviour code.
  ****************************************************************************/
 public class CaptureBehavior extends Behavior {
-  private MapLocation captureGoal = r.curLoc;
+  private MapLocation captureGoal;
   private boolean goalSet = false;
+  
+  // Encampment type to build; chooses type independently iff this is null
+  public RobotType encampmentType;
+  
 
   public CaptureBehavior(SoldierRobot r){
     super(r);
@@ -43,8 +42,7 @@ public class CaptureBehavior extends Behavior {
   
   
   public void checkBehaviorChange() {
-  	// TODO Auto-generated method stub
-  	
+  	if(r.util.senseDanger()) r.setBehavior(r.combatBehavior);
   }
   
 
@@ -61,20 +59,21 @@ public class CaptureBehavior extends Behavior {
     }
   }
 
-  private void initializeCaptureBehaviour(){
-  }
 
   // Main capture behaviour
   private void capture() throws GameActionException{
-    if(r.curLoc == captureGoal){
-      if(r.rc.senseEncampmentSquare(r.curLoc) && r.rc.senseCaptureCost() < 1.1 * r.rc.getTeamPower()){
-        r.rc.captureEncampment(chooseType());
+    if(r.curLoc.equals(captureGoal)){
+      if(r.rc.senseEncampmentSquare(r.curLoc) && r.rc.senseCaptureCost() < 0.95 * r.rc.getTeamPower()){
+        if(encampmentType != null) r.rc.captureEncampment(encampmentType);
+        else r.rc.captureEncampment(chooseType());
       }
     } else {
-      if(r.rc.senseObjectAtLocation(captureGoal).getTeam() != r.myTeam){
-        r.nav.moveTo(captureGoal);
+      if(r.rc.canSenseSquare(captureGoal)){
+    	  GameObject o = r.rc.senseObjectAtLocation(captureGoal);
+    	  if(o != null && o.getTeam() == r.myTeam) goalSet = false;
+    	  else r.nav.tunnelTo(captureGoal); //## moveTo once fixed
       } else {
-        goalSet = false;
+    	  r.nav.tunnelTo(captureGoal);
       }
     }
   }
@@ -83,31 +82,49 @@ public class CaptureBehavior extends Behavior {
   private boolean setCaptureGoal() throws GameActionException{
     MapLocation[] nearbyEncampmentSquares = r.rc.senseEncampmentSquares(r.curLoc, 100000, Team.NEUTRAL);
     if(nearbyEncampmentSquares.length != 0){
-      MapLocation goal = nearbyEncampmentSquares[0];
-      int dist = r.curLoc.distanceSquaredTo(goal);
+      MapLocation goal = null;
+      int dist = 10000;
 
-      // Find the closest encampment square
+      // Find the closest unoccupied encampment square that doesn't box in the HQ
       for(MapLocation loc : nearbyEncampmentSquares){
-        int newDist = r.curLoc.distanceSquaredTo(loc);
-        if(newDist < dist){
+        int newDist = r.util.getDistanceBetween(r.curLoc, loc);
+        if(newDist < dist && !boxIn(loc)){
+          if(r.rc.canSenseSquare(loc)){
+	          GameObject o = r.rc.senseObjectAtLocation(loc);
+	      	  if(o != null && o.getTeam() == r.myTeam) continue;
+          }
+
           dist = newDist;
           goal = loc;
         }
       }
-      captureGoal = goal;
-      return true;
-    } else {
-      return false;
+      if(goal != null){
+	      captureGoal = goal;
+	      return true;
+      }
     }
+    return false; 
+  }
+  // Special case: don't box in our HQ with encampments (they do this deliberately with the maps)
+  private boolean boxIn(MapLocation loc) throws GameActionException{
+	  if(r.util.getDistanceBetween(loc, r.HQ) > 2) return false;
+	  int freeCount = 0;
+	  for(Direction d : r.util.movableDirs){
+		  if(r.util.squareFree(r.HQ.add(d))) freeCount++;
+		  if(freeCount > 1) return false;
+	  }
+	  return true;
   }
 
-  // Decides which type of encampment to build
-  private RobotType chooseType() throws GameActionException{
-    MapLocation[] alliedEncampments = r.rc.senseAlliedEncampmentSquares();
 
-    int distToEnemyHQ = r.curLoc.distanceSquaredTo(r.rc.senseEnemyHQLocation());
-    int distToTeamHQ = r.curLoc.distanceSquaredTo(r.rc.senseEnemyHQLocation());
-    if(distToEnemyHQ <= 63) {
+  // Decides which type of encampment to build
+  // Should generally be decided by HQ
+  private RobotType chooseType() throws GameActionException{
+   // MapLocation[] alliedEncampments = r.rc.senseAlliedEncampmentSquares();
+
+    int distToEnemyHQ = r.curLoc.distanceSquaredTo(r.eHQ);
+    int distToTeamHQ = r.curLoc.distanceSquaredTo(r.HQ);
+    if(distToEnemyHQ <= 64 || distToTeamHQ <= 64) {
       return RobotType.ARTILLERY;
     } else if(Math.random() < 0.5) {
       return RobotType.GENERATOR;

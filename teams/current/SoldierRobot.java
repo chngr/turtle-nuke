@@ -51,7 +51,7 @@ public class SoldierRobot extends BaseRobot {
 			// loop when it happens. Doesn't appear to mess with proper messages.
 			return data.length; 
 					
-		case 1:  // Subscribe
+		case 1:  // Subscribe @@ channelnum | 0
 			subscribe(data[startIdx+1]);
 			break;
 			
@@ -60,14 +60,28 @@ public class SoldierRobot extends BaseRobot {
 			fortifyBehavior.buildFort(HQ, 2, HQ.directionTo(rc.senseEnemyHQLocation()).rotateLeft().rotateLeft(), 3);
 			break;
 			
-		case 3: // Rush: default (enemy HQ)
+		case 3: // Rush @@ nukeRush? | 0
 			setBehavior(travelBehavior);
+			travelBehavior.reset();
 			travelBehavior.destination = eHQ;
-			//## set combat, movement mode?
+			if(data[startIdx+1] == 1) combatBehavior.setNukeRush();
+			//travelBehavior.rushDistance = 2; //## is this helpful?
 			break;
 			
+		case 4: // Swarm @@ target.x | target.y
+			setBehavior(travelBehavior);
+			travelBehavior.reset();
+			travelBehavior.destination = new MapLocation(data[startIdx+1],data[startIdx+2]);
+			break;
+			
+		case 5: // Capture @@ encampmentOrdinal | 0
+			setBehavior(captureBehavior);
+			captureBehavior.encampmentType = RobotType.values()[data[startIdx+1]];
+			break;
+			
+			
 		default:
-			System.out.println("Unrecognised message"); //DEBUG
+			System.out.println("Unrecognised message: " + (int)data[startIdx]); //DEBUG
 		}
 		return 3; // Minimum message length
 	}

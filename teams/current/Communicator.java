@@ -60,26 +60,30 @@ public class Communicator
 	// If datalen > 2, remaining bytes will be written to successive freqtable channels
 	// e.g. send(2, "hello", 5) will write to channels 8175, 1867, 5264.
 	// The set of messages beginning at 8175 is the "message queue starting at 8175".
-	public void send(int freq, char[] data, int datalen) throws GameActionException
+	public boolean send(int freq, char[] data, int datalen) throws GameActionException
 	{
-		int packet;
-		char c1, c2, c3;
-		for (int i = freq, c = 0; c < datalen; i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS, c+=3)
-		{
-			// Find the next open spot in the message queue for a packet
-			while(isValidPacket(r.rc.readBroadcast(i)))
-				i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS;
+		if(r.rc.getTeamPower() > GameConstants.BROADCAST_SEND_COST * (datalen/3 + 1)){
+			int packet;
+			char c1, c2, c3;
+			for (int i = freq, c = 0; c < datalen; i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS, c+=3)
+			{
+				// Find the next open spot in the message queue for a packet
+				while(isValidPacket(r.rc.readBroadcast(i)))
+					i = (i + 1) % GameConstants.BROADCAST_MAX_CHANNELS;
+					
+				c1 = data[c];
+				c2 = (c+1 >= datalen) ? 0xAA : data[c+1];	// do not change these padding values!
+				c3 = (c+2 >= datalen) ? 0x55 : data[c+2];	// do not change these padding values!
 				
-			c1 = data[c];
-			c2 = (c+1 >= datalen) ? 0xAA : data[c+1];	// do not change these padding values!
-			c3 = (c+2 >= datalen) ? 0x55 : data[c+2];	// do not change these padding values!
-			
-			// Three data bytes (with MSB last to speed up receiving)
-			packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
-			// Add a checksum as the last byte
-			packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF) ^ magicChecksumVal;
-			r.rc.broadcast(i, packet);
+				// Three data bytes (with MSB last to speed up receiving)
+				packet = (c3 << 24) | (c2 << 16) | (c1 << 8);
+				// Add a checksum as the last byte
+				packet |= c1 ^ c2 ^ c3 ^ (r.curRound & 0xFF) ^ magicChecksumVal;
+				r.rc.broadcast(i, packet);
+			}
+			return true;
 		}
+		return false;
 	}
 	
 	// Reads all valid messages in the message queue starting at channel freqtable[offset]
@@ -88,28 +92,32 @@ public class Communicator
 	{
 		int packet, i = 0;
 		char[] data = new char [3 * maxMsgQueueLen];
-
-		while(isValidPacket(packet = r.rc.readBroadcast(freq)))
-		{
-			//r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
-			packet >>= 8;	// First character (discarding checksum)
-			data[i++] = (char)(packet & 0xFF);
-
-			packet >>= 8;	// Second character
-			data[i++] = (char)(packet & 0xFF);
-			
-			packet >>= 8;	// Third character
-			data[i++] = (char)(packet & 0xFF);
-
-			freq++;
-			if (i == 3 * maxMsgQueueLen) break;
-		}
-//		//DEBUG
-//		String msgs = "Recieved: ";
-//		for(int j=0; j<i;j++) msgs += ((int)data[j])+"|";
-//		r.rc.setIndicatorString(1, msgs);
 		
-		return Arrays.copyOfRange(data, 0, i+1); //## The copyOfRange bytecode counts as our own; ok?
+		if(r.rc.getTeamPower() > GameConstants.BROADCAST_READ_COST * maxMsgQueueLen){
+
+			while(isValidPacket(packet = r.rc.readBroadcast(freq)))
+			{
+				//r.rc.setIndicatorString(2, Integer.toHexString(packet)); //DEBUG
+				packet >>= 8;	// First character (discarding checksum)
+				data[i++] = (char)(packet & 0xFF);
+
+				packet >>= 8;	// Second character
+				data[i++] = (char)(packet & 0xFF);
+				
+				packet >>= 8;	// Third character
+				data[i++] = (char)(packet & 0xFF);
+
+				freq++;
+				if (i == 3 * maxMsgQueueLen) break;
+			}
+//			//DEBUG
+//			String msgs = "Recieved: ";
+//			for(int j=0; j<i;j++) msgs += ((int)data[j])+"|";
+//			r.rc.setIndicatorString(1, msgs);
+			
+		}
+
+		return Arrays.copyOfRange(data, 0, i+1);
 	}
 	
 	boolean isValidPacket(int packet)

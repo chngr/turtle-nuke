@@ -4,18 +4,23 @@ import battlecode.common.GameActionException;
 import battlecode.common.Upgrade;
 import current.HQRobot;
 
+// ## Hacky
+
 public class Rush extends Strategy {
 
 	public boolean researchDefusion = false;
+	public boolean nukeRush = false;
 	
 	public Rush(HQRobot HQ) {
 		super(HQ);
 	}
 
 	@Override
-	public void checkStrategyChange() {
-		// TODO Auto-generated method stub
-		
+	public void checkStrategyChange() throws GameActionException {
+		if(HQ.rc.senseEnemyNukeHalfDone()){
+			nukeRush = true;
+			researchDefusion = true;
+		}
 	}
 
 	@Override
@@ -25,17 +30,24 @@ public class Rush extends Strategy {
 				if(!HQ.rc.hasUpgrade(Upgrade.DEFUSION)){
 					HQ.rc.researchUpgrade(Upgrade.DEFUSION);
 				}
-				else researchDefusion = false;
+				else {
+					researchDefusion = false;
+					spawnRusher();
+				}
 			}
-			else if(HQ.spawn()){
-				HQ.sendInitializeMessage( HQ.buildRushMessage() );
-			}
+			else spawnRusher();
+		}
+	}
+	
+	private void spawnRusher() throws GameActionException{
+		if(HQ.spawn()){
+			HQ.sendInitializeMessage( HQ.buildRushMessage(nukeRush) );
 		}
 	}
 
 	@Override
 	public void begin() throws GameActionException {
-		HQ.comm.putSticky(1, HQ.buildRushMessage()); //##! not working somehow
+		HQ.comm.putSticky(1, HQ.buildRushMessage(nukeRush));
 	}
 
 }

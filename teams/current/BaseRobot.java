@@ -49,6 +49,7 @@ public abstract class BaseRobot
 		this.id = rc.getRobot().getID();
 		this.spawnRound = this.curRound = Clock.getRoundNum();
 		this.myType = rc.getType();
+		this.curLoc = rc.getLocation();
 		
 		// Initialize team objects
 		this.myTeam = rc.getTeam();

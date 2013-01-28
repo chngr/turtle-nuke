@@ -22,8 +22,11 @@ public class RobotPlayer {
             }
 			
 			while(true)
-			{			
-				br.run();
+			{
+				try{ // ##!! remove for testing !!
+					br.run();
+				}
+				catch(Exception e){}
 
 				br.rc.yield();
 			}
