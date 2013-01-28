@@ -9,7 +9,7 @@ In our internal representation of the map/costs:
 [object id (if relevant)]  [square attributes]
        16 bits             16 bits
 e.g. 0x0002000A = object id 2 with content of type 10
-Current square attributes:
+team097 square attributes:
 0x00000001: hostile mine
 *************************************/
 
@@ -17,15 +17,21 @@ Current square attributes:
 //Multiply heuristic cost by 1.01 to increase greediness? Won't break anything
 import battlecode.common.*;
 
+// SEARCH:
+// *** I think there might be unmerged bugfixes and improvements in test
+//TODO: !!! Do the next search (centered at the team097 goal location) while moving !!!
+// - Should start with a shallow search or delegate to another movement method
+//   while first search is in progress
 
 //TODO:@1 other robots
 //TODO: map edges
 
+//TODO: don't copy the whole path for new nodes, just include a reference to the parent's path
 //TODO: error handling
 //TODO: bytecodes
 //TODO: getter/setter for searchDepth, searchFreq
 //TODO:@5 danger and impatience state variables; will need to replan path when they change
-//TODO: stagger map update and search (update centered on next square)?
+
 
 //Infinite loop debugging:
 // 	private int debugCounter = 0; //DEBUG
@@ -47,6 +53,10 @@ public class Navigator {
 		
 	private BaseRobot r;
 	
+	
+	// ------------   SEARCH   ------------
+	// Truncated pseudo A* search to find the best path to the goal
+	// Efficient movement, but expensive computationally
 
 	private int searchDepth = 5; //?
 	private int mapDiagRSquared = 2*searchDepth*searchDepth;
@@ -73,14 +83,14 @@ public class Navigator {
 	private Direction[] path;
 	private int pathIdx;
 	private int searchTimer = 0;
-	private MapLocation currentDest;
+	private MapLocation team097Dest;
 
 	public Direction moveTo(MapLocation dest) throws GameActionException{
 		if(r.rc.isActive()){
-			if(!dest.equals(currentDest) || (searchTimer %= searchFreq) == 0){
+			if(!dest.equals(team097Dest) || (searchTimer %= searchFreq) == 0){
 				updateMap();
 				
-				currentDest = dest;
+				team097Dest = dest;
 				pathIdx = 0;
 				
 				path = search(dest);
@@ -282,26 +292,64 @@ public class Navigator {
 	}
 	
 	
-	// ------ ALTERNATE MOVE METHODS ------
+
+	// ------------   TUNNEL   ------------
+	// Move directly to the target, defusing mines
+	// Useful if the path is going to be traveled often, or we don't want mines there
 	
-	  public void tunnelTo(MapLocation loc) throws GameActionException{
-		  if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
-			  Direction dir = r.rc.getLocation().directionTo(loc);
-			  if(r.rc.canMove(dir)) moveOrDefuse(dir);
-			  else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
-			  else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
-		  }
-	  }
-	  
-	  public boolean moveOrDefuse(Direction dir) throws GameActionException{
-		  MapLocation loc = r.rc.getLocation().add(dir);
-		  Team mine = r.rc.senseMine(loc);
-		  if (mine == r.rc.getTeam() || mine == null){
-			  r.rc.move(dir);
-			  return true;
-		  }
-		  r.rc.defuseMine(loc);
+    public void tunnelTo(MapLocation loc) throws   GameActionException{
+    	Direction dir = r.curLoc.directionTo(loc);
+    	
+    	//## !! other movements want this !!
+    	if(r.util.senseHostileMine(r.curLoc)){ // Stepped on undetected enemy mine
+    		moveNear(dir); // Make sure we move, not defuse
+    		return;
+    	}
+		if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
+		    if(r.rc.canMove(dir)) moveOrDefuse(dir);
+		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
+		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
+		}
+	}
+	
+	public boolean moveOrDefuse(Direction dir) throws GameActionException{
+		MapLocation loc = r.rc.getLocation().add(dir);
+		Team mine = r.rc.senseMine(loc);
+		if (mine == r.rc.getTeam() || mine == null){
+		   r.rc.move(dir);
+		   return true;
+		}
+		r.rc.defuseMine(loc);
+		return false;
+	}
+	
+	// Move as close to the dir as possible, but always move if possible
+	public boolean moveNear(Direction dir) throws GameActionException{
+
+	      // Need to do this first so the termination check works
+	      if(r.rc.canMove(dir) && !r.util.senseHostileMine(r.curLoc.add(dir))){
+	    	  r.rc.move(dir);
+		      return true;
+	      }
+	      // Move as close to the desired direction as possible
+		  Direction dirLeft = dir;
+		  Direction dirRight = dir;	
+		  do {
+			dirLeft = dirLeft.rotateLeft();
+		    if (r.rc.canMove(dirLeft) && !r.util.senseHostileMine(r.curLoc.add(dirLeft))) {
+		      r.rc.move(dirLeft);
+		      return true;
+		    }
+		    
+		    dirRight = dirRight.rotateRight(); 
+		    if (r.rc.canMove(dirRight)  && !r.util.senseHostileMine(r.curLoc.add(dirRight))) {
+		      r.rc.move(dirRight);
+		      return true;
+		    }
+		        
+		  } while (dirRight != dirLeft) ;
+		  
 		  return false;
-	  }
+	}
 	
 }

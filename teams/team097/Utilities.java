@@ -19,6 +19,19 @@ public class Utilities {
 		this.r = robot;
 	}
 	
+	public Direction[] movableDirs = {
+			  Direction.NORTH_WEST,
+              Direction.NORTH,
+              Direction.NORTH_EAST,
+              Direction.WEST,
+              Direction.EAST,
+              Direction.SOUTH_WEST,
+              Direction.SOUTH,
+              Direction.SOUTH_EAST
+    };
+	
+	// ## Math.random() is not random in battlecode - all robots will be the same
+	// ## If we need randomness, we should write our own, or use e.g. 2012 team's
 	public int genRandFromClosedInterval(int min, int max){
 		return (int)(min + Math.random() * (max - min));
 	}
@@ -26,6 +39,7 @@ public class Utilities {
 	public int getDistanceBetween(MapLocation loc1, MapLocation loc2){
 		return Math.max(Math.abs(loc1.x - loc2.x), Math.abs(loc1.y - loc2.y));
 	}
+	
 	
 	public <T> void swap(T[] lst, int idx1, int idx2)
 	{
@@ -76,8 +90,46 @@ public class Utilities {
 			_qsNearestNRobots(rdPairs, N - (idxCur - idxLeft) - 1, idxCur + 1, idxRight);
 	}
 	
+	
 	public boolean senseHostileMine(MapLocation location) {
 		Team mine_team = r.rc.senseMine(location);
 		return !(mine_team == null || mine_team == r.myTeam);
+	}
+	
+	
+	public boolean senseDanger(){
+		return r.rc.senseNearbyGameObjects(Robot.class, 14, r.enemyTeam).length > 0;
+	}
+	
+	
+	// Calculate roughly how close a location is to the line between the HQs
+	public float calculateCentrality(MapLocation loc){
+		int hdx = r.HQ.x - r.eHQ.x, hdy = r.HQ.y - r.eHQ.y,
+			ldx = r.HQ.x - loc.x,   ldy = r.HQ.y - loc.y;
+		if(hdx*ldx < 0 && hdy*ldy < 0){ // Wrong side of HQ
+			return getDistanceBetween(r.HQ,loc);
+		}
+		return Math.abs(hdx/hdy - ldx/ldy) * getDistanceBetween(r.HQ,loc);
+	}
+	
+	
+	public boolean inMap(MapLocation loc){
+		return (0 <= loc.x) && (loc.x < r.mapw) && (0 <= loc.y) && (loc.y < r.maph);
+	}
+	
+    public boolean squareFree(MapLocation loc) throws GameActionException{
+	    return r.util.inMap(loc) && (r.rc.senseObjectAtLocation(loc) == null) && !senseHostileMine(loc);
+    }
+	
+    
+	private Robot HQRobot;
+	public Robot getHQ() throws GameActionException{
+		if(HQRobot != null) return HQRobot;
+		return (HQRobot = (Robot) r.rc.senseObjectAtLocation(r.HQ));
+	}
+	private int HQID;
+	public int getHQID() throws GameActionException{
+		if(HQID != 0) return HQID;
+		return (HQID = getHQ().getID());
 	}
 }

@@ -4,7 +4,7 @@ package team097;
 Combat.java - Combat interface
 
 This module exports basic functionality for combat and fighting. The
-main method that this does export is
+main method is
 
     Combat.fight();
 
@@ -12,169 +12,272 @@ which controls immediate combat maneuvering. All calculations and
 movement will be controlled purely by the Combat class through that
 function.
 
-Some methods to help control the behaviour of fighting shall e
 
-    Combat.setClumping(int clumpingFactor);
-    Combat.setAgression(int aggressionFactor);
+The core philosophy is that we want to be adjacent to few enemies, 
+that are themselves adjacent to our allies. To achieve this we calculate
+the value and cost of attacking each enemy, then add the costs and
+average the values over the enemies adjacent to a potential move.
+This reflects the fact that our damage is divided among enemies,
+while their damage is additive.
 
-which allow one to set the tendency for robots to clump compared to
-tendency to engage enemy robots.
+The value of attacking an enemy is proportional to the number of allies
+adjacent to it, (reflecting the fact that here our damage sums, and we 
+want to focus fire). The cost of attacking an enemy is proportional to
+1/(adjacentAllies+1), reflecting the division of their damage.
+
 **********************************/
 
+import java.util.Arrays; //DEBUG
 import battlecode.common.*;
+
+//Notes: If there are very many enemies in range, this might timeout; we may want to add
+//a check for that, or just accept our inevitable doom. In practice, happens very rarely (< 1/10 games)
+//However, combat.fight() does take ~8500 bytecodes in heavy combat situations; drains our power.
+
+
+//TODO: Set enemy cost 0 if not active (defusing, mining)
+
 
 public class Combat{
   private BaseRobot r;
-
-  // Hard-coded values for possible move directions
-  private Direction[] moveDirs = {Direction.NORTH_WEST, Direction.NORTH, Direction.NORTH_EAST,
-                                  Direction.WEST,                 Direction.EAST,
-                                  Direction.SOUTH_WEST, Direction.SOUTH, Direction.SOUTH_EAST};
-
-  // Local map for combat
-  private double[][] localMap = new double[7][7];
-
-  // Costs for moving adjacent to enemy or ally
-  private double enemyTile = -4.0;
-  private double allyTile = -1.0;
-
-  // Additional constants that affect how likely a robot will choose to go near
-  // allies or enemies
-  private double clumpingFactor = 0.2;
-  private double hostilityFactor = 1.0;
 
   Combat(BaseRobot robot){
     this.r = robot;
   }
 
-  // Methods to set some of the constants
-  public void setClumpingFactor(int factor){
-    this.clumpingFactor = factor;
-  }
+  /***************************************************************************
+   * Constants and Parameters for Combat.java
+   **************************************************************************/
 
-  public void setHostilityFactor(int factor){
-    this.hostilityFactor = factor;
-  }
+  //## scale by own energon in computation? don't wan't to disengage 
+  //## (unless we have medbay, but that would be a combat behavior check)
+  //## but would be ideal if the more damaged units took the less dangerous positions
+  
+  // These need to be mutually balanced for combat to work properly
+  // If we want to engage a full health enemy in single combat, we need
+  // enemyValue - 40*enemyEnergonScale > enemyCost
+  public double enemyCost = 6;
+  public double enemyValue = 8.1;
+  public double allyFactor = 5; // Multiplied by number of allies adjacent in enemy value calculation
+  public double enemyEnergonScale = 1/20; // We subtract (enemy energon) * scale from the enemy's value
+  
+  // Cost of moving onto a mine; if this is 0, we ignore mines
+  // ## should defuse instead
+  public double mineCost = 1000;
+  
+  // Value of attacking enemy HQ and encampments
+  public double enemyHQVal = 20;
+  public double enemyEncampmentVal = 10;
+  
+  // Discount factors for enemies two squares away
+  // We only count the cost of unengaged far enemies; they are about as dangerous as adjacent ones
+  public double farCostDiscount = 0.9;
+  // We can't actually attack non-adjacent enemies; moving towards them is only valuable for the future
+  public double farValueDiscount = 0.1; 
+  
+  
+  /**
+   * Local variables
+   */
+  
+  // Hard-coded values for possible move directions
+  private Direction[] moveDirs = {Direction.NONE,
+		  						  Direction.NORTH_WEST,
+                                  Direction.NORTH,
+                                  Direction.NORTH_EAST,
+                                  Direction.WEST,
+                                  Direction.EAST,
+                                  Direction.SOUTH_WEST,
+                                  Direction.SOUTH,
+                                  Direction.SOUTH_EAST};
 
-  // Basic combat method:
-  //
-  // SENSE & UPDATE MAP<-
-  //       |             |
-  // CALCULATE COSTS     |
-  //       |             |
-  // FIND MINIMAL MOVE---|
-  //
+  // Local map for combat
+  // Stores energon of robots; + for allies, - for enemies
+  private double[][] localMap; //7x7
+  
+  // Store the value and cost of being near enemies
+  private double[][] enemyValues; //7x7
+  private double[][] enemyCosts; //7x7
+
+  
+  // Store the indexes of nearby enemies in the local map, for iteration
+  private int[][] enemyIdxs; //48x2; 48 is max enemies in range
+  private int numEnemies;
+  
+
+  /***************************************************************************
+   * Primary public method for the package; interface for the combat algorithm.
+   *
+   * The basic procedure for the fight() routine is as follows:
+   *
+   *  1. Sense environment for nearby game objects and put them in the localMap
+   *  2. Compute the value and cost of being near each enemy, and store them
+   *  3. Compute the net value of moving in each movable direction (including none)
+   *  4. Move in the direction with the highest net value
+   *
+   *  enemyDanger can be set to change the cost of moving near enemies;
+   *  more configurable parameters may be added later.
+   ***************************************************************************/
   public void fight() throws GameActionException{
-    // Senses and populates local map
+	// 0. Reset map, costs and enemies
+	reset();
+	
+    // 1. Senses and populates local map
     updateMap();
+    
+    // 2. Compute enemy values and costs
+    evaluateEnemies();
 
-    // Calculate the cost for moving to an adjacent square
-    double[] directionCosts = computeCosts();
+    // 3. Calculate the net score of adjacent squares and team097 square
+    double[] directionScores = computeScores();
 
-    // Find the adjacent square with the minimal cost
-    double cost = 100000.0;
-    Direction dir = r.rc.getLocation().directionTo(r.rc.senseEnemyHQLocation());
-    int directionOffset = 0;
+    // 4. Move to the square with highest net score (possibly the team097 square)
+    double bestScore = directionScores[0];
+    int bestDirIdx = 0;
+    
+    //r.rc.setIndicatorString(2, Arrays.toString(directionScores)); //DEBUG
 
-    for(int i = 0; i < 8; i++){
-      if(directionCosts[i] <= cost){
-        dir = moveDirs[i];
-        cost = directionCosts[i];
-        directionOffset = i;
+    for(int i = 1; i < 9; i++){
+      if(directionScores[i] > bestScore){
+        bestScore = directionScores[i];
+        bestDirIdx = i;
       }
     }
 
-    String str = "";
-    for(int i = 0; i < 8; i++){
-      str += Double.toString(directionCosts[i]) + " ";
-    }
-    String dirStr = dir.toString();
-    r.rc.setIndicatorString(0,str +  dirStr);
-
-    // If the best thing to do is not move, yield for now
-    if(r.rc.canMove(dir) && r.rc.senseMine(r.rc.getLocation().add(dir)) == null)
-      r.rc.move(dir);
-    else{
-      int[] offsets = {1, -1, 2, -2};
-      for(int i = 0; i < 4; i++){
-        int idx = (directionOffset + offsets[i] % 8) + 8;
-        dir = moveDirs[idx % 8];
-        if(r.rc.canMove(dir) && r.rc.senseMine(r.rc.getLocation().add(dir)) == null){
-          r.rc.move(dir);
-          r.rc.setIndicatorString(0, str + dir.toString());
-          break;
-        }
-      }
-    }
+    //canMove catches map edges and bytcode overrun (happens very occasionally)
+    if(bestDirIdx != 0 && r.rc.canMove(moveDirs[bestDirIdx])) // 0: Direction.None
+      r.rc.move(moveDirs[bestDirIdx]);
   }
 
-  // Senses for nearby robots and updates map accordingly
+  /**************************************************************************
+   * Core Functions of Combat.java
+   **************************************************************************/
   private void updateMap() throws GameActionException{
+
+	
+	// ## for complete eval of diagonal, radSquared should be 18; 
+	// ## only helps if ally can see for us, would need to check if squares are in bounds of array
     Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);
-    // Process nearby robots
     for(Robot robot: nearbyRobots){
       RobotInfo ri = r.rc.senseRobotInfo(robot);
-      int dx = r.rc.getLocation().x - ri.location.x;
-      int dy = r.rc.getLocation().y - ri.location.y;
-      double energonScale = r.rc.getEnergon() / ri.energon;
+      int dx = r.curLoc.x - ri.location.x;
+      int dy = r.curLoc.y - ri.location.y;
 
-      // Set the value of an occupied scared as + if team, - if enemy
-      // The cost of the square is set proportional to the energon of the robot
-      if(ri.team == r.rc.getTeam())
-        localMap[3 - dx][3 - dy] = allyTile * energonScale * clumpingFactor;
-      else
-        localMap[3 - dx][3 - dy] = enemyTile * energonScale * energonScale * hostilityFactor;
+      if(ri.team == r.myTeam)
+        localMap[3 - dx][3 - dy] = ri.energon;
+      else{
+    	  if(ri.type == RobotType.SOLDIER){
+	        localMap[3 - dx][3 - dy] = -ri.energon;
+	        enemyIdxs[numEnemies][0] = 3 - dx;
+	        enemyIdxs[numEnemies][1] = 3 - dy;
+	        numEnemies++;
+    	  } else {
+        	  localMap[3 - dx][3 - dy] = -1; // So we don't try to step here
+        	  enemyValues[3 - dx][3 - dy] = (ri.type == RobotType.HQ) ? enemyHQVal : enemyEncampmentVal;
+          }
+      }
+      
     }
+    localMap[3][3] = 0; // Ignore ourselves
   }
 
-  // Based on sensed map, shall compute the cost for each move
-  // The idea would be to loop through the map, and if we see that there is
-  // an enemy/friend at a given location, then add a cost to adjacent squares
-  // in map.
-  //
-  // * Note very naive and would be well to think of better method
-  private double[] computeCosts(){
-    // Compute the cost by taking the weighted sum of the surrounding squares
-    // Shall compute costs going along the edge inwards
+  // @E If this is too slow, there is less value in evaluating far enemies;
+  // we could only populate a 5x5, and change the computation of farCost
+  // to something simpler
+  private void evaluateEnemies(){
+	  int x, y, allyCount;
+	  for(int i=0; i<numEnemies; i++){
+		  x = enemyIdxs[i][0];
+		  y = enemyIdxs[i][1];
+		  allyCount = isAlly(x-1,y-1) + isAlly(x,y-1) + isAlly(x+1,y+1) +
+                  isAlly(x-1,y) + isAlly(x+1,y) + isAlly(x-1,y+1) +
+                  isAlly(x,y+1) + isAlly(x+1,y+1);
+		  enemyValues[x][y] = enemyValue + allyCount*allyFactor + localMap[x][y]*enemyEnergonScale; // Last term is -enemyEnergon/scale
+		  enemyCosts[x][y] = enemyCost/(allyCount + 1);
+	  }
+	  
+  }
+  private int isAlly(int x, int y){
+	  if(x < 0 || x > 6 || y < 0 || y > 6) return 0; // Check if out of bounds
+	  return (localMap[x][y] > 0) ? 1 : 0;
+  }
+  
+  
+  // Computes cost based on a square around the tile
+  private double[] computeScores(){
+    double[] directionCosts = new double[9];
 
-    // Using the order
-    // NORTH_WEST, NORTH, NORTH_EAST,
-    // WEST,       NONE , EAST,
-    // SOUTH_WEST, SOUTH, SOUTH_WEST
-    // we compute the cost for moving a specific direction by summing the costs
-    // adjacent squares
-    double[] directionCosts = new double[8];
-    double twoFactor = 0.5;
-    double adjFactor = 0.9;
-    double locFactor = 0.2;
-
-    directionCosts[0] = crossCost(2, 2, twoFactor, adjFactor, locFactor);
-    directionCosts[1] = crossCost(3, 2, twoFactor, adjFactor, locFactor);
-    directionCosts[2] = crossCost(4, 2, twoFactor, adjFactor, locFactor);
-    directionCosts[3] = crossCost(2, 3, twoFactor, adjFactor, locFactor);
-    directionCosts[4] = crossCost(4, 3, twoFactor, adjFactor, locFactor);
-    directionCosts[5] = crossCost(2, 4, twoFactor, adjFactor, locFactor);
-    directionCosts[6] = crossCost(3, 4, twoFactor, adjFactor, locFactor);
-    directionCosts[7] = crossCost(4, 4, twoFactor, adjFactor, locFactor);
-
+    directionCosts[0] = crossCost(3, 3);
+    directionCosts[1] = crossCost(2, 2);
+    directionCosts[2] = crossCost(3, 2);
+    directionCosts[3] = crossCost(4, 2);
+    directionCosts[4] = crossCost(2, 3);
+    directionCosts[5] = crossCost(4, 3);
+    directionCosts[6] = crossCost(2, 4);
+    directionCosts[7] = crossCost(3, 4);
+    directionCosts[8] = crossCost(4, 4);
+    
     return directionCosts;
   }
 
-  // Computes the cost around a given square in a diamond shape
-  //          #
-  //         ###
-  //        #####
-  //         ###
-  //          #
-  // where the squares two away from the centre are weighted by twoFactor,
-  // those that are one away from the centre by adjFactor, and the middle
-  // square by locFactor
-  private double crossCost(int x, int y, double tf, double af, double lf){
-    return tf*localMap[x][y-2] +
-           af*localMap[x-1][y-1] + af*localMap[x][y-1] + af*localMap[x+1][y+1] +
-           tf*localMap[x-2][y] + af*localMap[x-1][y] + lf*localMap[x][y] + af*localMap[x+1][y] + tf*localMap[x+2][y] +
-           af*localMap[x-1][y+1] + af*localMap[x][y+1] + af*localMap[x+1][y+1] +
-           tf*localMap[x][y+2];
+  /***************************************************************************
+  * Computes the cost of a given square. Uses the values and costs of 
+  * squares within two of the given square.
+  ***************************************************************************/
+  private int numAdjacent;
+  private double crossCost(int x, int y){
+	  
+	if(localMap[x][y] != 0) return -100000; // Occupied; can't move here
+	else if(r.util.senseHostileMine(r.curLoc.add(x-3,y-3)) && mineCost != 0) return -mineCost;
+	  
+	numAdjacent = 0;
+	
+    // Two squares away
+	double farCost = farCost(enemyCosts[x-1][y-2]) + farCost(enemyCosts[x][y-2]) + farCost(enemyCosts[x+1][y-2]) +
+            farCost(enemyCosts[x-2][y-1]) + farCost(enemyCosts[x-1][y]) + farCost(enemyCosts[x-1][y+1]) +
+            farCost(enemyCosts[x+2][y-1]) + farCost(enemyCosts[x+2][y]) + farCost(enemyCosts[x+2][y+1]) +
+            farCost(enemyCosts[x-1][y+2]) + farCost(enemyCosts[x][y+2]) + farCost(enemyCosts[x+1][y+2]) +
+            farCost(enemyCosts[x+2][y+2]) + farCost(enemyCosts[x+2][y-2]) + farCost(enemyCosts[x-2][y+2]) +
+            farCost(enemyCosts[x-2][y-2]);
+
+	double farVal = enemyValues[x-1][y-2] + enemyValues[x][y-2] + enemyValues[x+1][y-2] +
+            enemyValues[x-2][y-1] + enemyValues[x-1][y] + enemyValues[x-1][y+1] +
+            enemyValues[x+2][y-1] + enemyValues[x+2][y] + enemyValues[x+2][y+1] +
+            enemyValues[x-1][y+2] + enemyValues[x][y+2] + enemyValues[x+1][y+2] +
+            enemyValues[x+2][y+2] + enemyValues[x+2][y-2] + enemyValues[x-2][y+2] +
+            enemyValues[x-2][y-2];
+	
+    // One square away
+	double adjCost = enemyCosts[x-1][y-1] + enemyCosts[x][y-1] + enemyCosts[x+1][y+1] +
+            enemyCosts[x-1][y] + enemyCosts[x+1][y] + enemyCosts[x-1][y+1] +
+            enemyCosts[x][y+1] + enemyCosts[x+1][y+1];
+
+	double adjVal = hasEnemy(enemyValues[x-1][y-1]) + hasEnemy(enemyValues[x][y-1])+ hasEnemy(enemyValues[x+1][y+1]) +
+            hasEnemy(enemyValues[x-1][y]) + hasEnemy(enemyValues[x+1][y]) + hasEnemy(enemyValues[x-1][y+1]) +
+            hasEnemy(enemyValues[x][y+1]) + hasEnemy(enemyValues[x+1][y+1]);
+	
+	//r.rc.setIndicatorString(2, (farVal * farValueDiscount) +" "+ (farCost * farCostDiscount) +" "+ adjVal/numAdjacent +" "+ adjCost); //DEBUG
+    return (farVal * farValueDiscount) - (farCost * farCostDiscount) + ((numAdjacent == 0) ? 0 : adjVal/numAdjacent) - adjCost;
+  }
+  private double farCost(double mapVal){
+	  // Ignore the cost of enemies if they are already engaged with our allies
+	  return (mapVal == enemyCost) ? mapVal : 0;
+  }
+  private double hasEnemy(double mapVal){
+	  if(mapVal != 0) numAdjacent++;
+	  return mapVal;
+  }
+  
+  
+  // Reset instance variables
+  private void reset(){
+		localMap = new double[7][7];
+		
+		enemyIdxs = new int[48][2];
+		numEnemies = 0;
+		
+		enemyValues = new double[7][7];
+		enemyCosts = new double[7][7];
   }
 
 }

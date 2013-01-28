@@ -23,8 +23,10 @@ public class RobotPlayer {
 			
 			while(true)
 			{
-				br.curRound = Clock.getRoundNum();				
-				br.run();
+				try{ // ##!! remove for testing !!
+					br.run();
+				}
+				catch(Exception e){}
 
 				br.rc.yield();
 			}
