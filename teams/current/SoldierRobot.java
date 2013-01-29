@@ -75,8 +75,13 @@ public class SoldierRobot extends BaseRobot {
 			break;
 			
 		case 5: // Capture @@ encampmentOrdinal | 0
-			setBehavior(captureBehavior);
-			captureBehavior.encampmentType = RobotType.values()[data[startIdx+1]];
+			// Better would be to allow forced encampmentType change
+			// Do we have access to channel of each message? would be best to overwrite it once accepted
+			if (currentBehavior != captureBehavior) { 
+				setBehavior(captureBehavior);
+				captureBehavior.encampmentType = RobotType.values()[data[startIdx+1]];
+				//System.out.println(captureBehavior.encampmentType+" received capture goal");
+			}
 			break;
 			
 			
