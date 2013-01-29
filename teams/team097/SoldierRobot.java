@@ -11,11 +11,18 @@ public class SoldierRobot extends BaseRobot {
 	
 	public CombatBehavior combatBehavior;
 	public CaptureBehavior captureBehavior;
-	public SwarmBehavior swarmBehavior;
+	public SwarmBehavior swarmBehavior; // This should maybe be a slow creep, not a blind rush; or that could be a different behavior
 	public FortifyBehavior fortifyBehavior;
 	public ScoutBehavior scoutBehavior;
 	public TravelBehavior travelBehavior;
-
+	
+	// Artillery detection
+	// If we take damage unexpectedly, there must be an enemy artillery
+	public double curEnergon = 40;
+	public double prevEnergon = 40;
+	public double curShields = 0;
+	public double prevShields = 0;
+	public Robot[] engagedEnemies = new Robot[0]; // Empty array
 	
 	SoldierRobot(RobotController rc) throws GameActionException{
 		super(rc);
@@ -32,18 +39,27 @@ public class SoldierRobot extends BaseRobot {
 
 	public void run() throws GameActionException{
 		super.run();
-		if (rc.isActive()) {
-			readAllMessages(); // in BaseRobot
-			
+		
+		// Artillery detection
+		if(detector.isOn() && !detector.artilleryDetected && detectArtilleryAttack()){
+			comm.putSticky(Communicator.ARTILLERY_DETECTION_SPACE, buildArtilleryDetectedMessage(curLoc));
+		}
+		prevEnergon = curEnergon;
+		curEnergon = rc.getEnergon();
+		prevShields = curShields;
+		curShields = rc.getShields();
+		engagedEnemies = rc.senseNearbyGameObjects(Robot.class, 8, enemyTeam);
+		
+		if (rc.isActive()) {			
 			team097Behavior.checkBehaviorChange();
 			team097Behavior.run();
-			//## use remaining bytecodes if we don't need to conserve power
 		}
+		//## use remaining bytecodes if we don't need to conserve power
 	}
 	
 	// Return the length of the message
 	@Override
-	protected int processMessage(char[] data, int startIdx){
+	protected int processMessage(char[] data, int startIdx) throws GameActionException{
 		//System.out.println("Recieved message: header "+(int)data[startIdx]); //DEBUG
 		switch(data[startIdx]){
 		case 0:
@@ -69,9 +85,9 @@ public class SoldierRobot extends BaseRobot {
 			break;
 			
 		case 4: // Swarm @@ target.x | target.y
-			setBehavior(travelBehavior);
-			travelBehavior.reset();
-			travelBehavior.destination = new MapLocation(data[startIdx+1],data[startIdx+2]);
+			setBehavior(swarmBehavior);
+			swarmBehavior.init();
+			swarmBehavior.target = new MapLocation(data[startIdx+1],data[startIdx+2]);
 			break;
 			
 		case 5: // Capture @@ encampmentOrdinal | 0
@@ -79,17 +95,37 @@ public class SoldierRobot extends BaseRobot {
 			captureBehavior.encampmentType = RobotType.values()[data[startIdx+1]];
 			break;
 			
+		case 6: // Artillery detected @@ detectionLoc.x | detectionLoc.y
+			detector.detectedArtilleryAt(new MapLocation(data[startIdx+1],data[startIdx+2]));
+			break;
+
 			
 		default:
-			System.out.println("Unrecognised message: " + (int)data[startIdx]); //DEBUG
+			System.out.println("Unrecognised message: " + (int)data[startIdx]); //DEBUG*
 		}
 		return 3; // Minimum message length
 	}
 	
-	
 	public void setBehavior(Behavior b){
-		//rc.setIndicatorString(1, b.getClass().getName()); //DEBUG
+		rc.setIndicatorString(1, b.getClass().getName()); //DEBUG*
 		prevBehavior = team097Behavior;
 		team097Behavior = b;
 	}
+	
+	
+	public boolean detectArtilleryAttack(){
+		double eDelta = prevEnergon - curEnergon;
+		double sDelta = prevShields - curShields - 1; // Base decay rate
+		
+		// ## could be improved
+		if(eDelta + sDelta >= 15){ // Artillery splash damage
+			boolean onMine = util.senseHostileMine(curLoc);
+			if(eDelta > 6*engagedEnemies.length + (onMine ? 10 : 0)
+				|| sDelta > (onMine ? 9 : 0)){ // 90% mine absorption
+				return true;
+			}
+		}
+		return false;
+	}
+	
 }

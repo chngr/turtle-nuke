@@ -34,7 +34,7 @@ import battlecode.common.*;
 //a check for that, or just accept our inevitable doom. In practice, happens very rarely (< 1/10 games)
 //However, combat.fight() does take ~8500 bytecodes in heavy combat situations; drains our power.
 
-
+//TODO: Mine cost proportional to shields (we have cached in robot)
 //TODO: Set enemy cost 0 if not active (defusing, mining)
 
 
@@ -62,12 +62,15 @@ public class Combat{
   public double enemyEnergonScale = 1/20; // We subtract (enemy energon) * scale from the enemy's value
   
   // Cost of moving onto a mine; if this is 0, we ignore mines
-  // ## should defuse instead
   public double mineCost = 1000;
   
   // Value of attacking enemy HQ and encampments
   public double enemyHQVal = 20;
   public double enemyEncampmentVal = 10;
+  public double enemyArtilleryVal = 90; //##? They *are* dangerous... should probably be higher than nukeRush HQ val (cur 80)
+  
+  // How strongly to bias the combat algorithm when we have a preferred direction 
+  public double directionBias = 1; // ## TEST THIS VALUE
   
   // Discount factors for enemies two squares away
   // We only count the cost of unengaged far enemies; they are about as dangerous as adjacent ones
@@ -81,15 +84,15 @@ public class Combat{
    */
   
   // Hard-coded values for possible move directions
-  private Direction[] moveDirs = {Direction.NONE,
-		  						  Direction.NORTH_WEST,
-                                  Direction.NORTH,
-                                  Direction.NORTH_EAST,
-                                  Direction.WEST,
-                                  Direction.EAST,
-                                  Direction.SOUTH_WEST,
-                                  Direction.SOUTH,
-                                  Direction.SOUTH_EAST};
+  private Direction[] moveDirs = {	Direction.NORTH,
+		  						  	Direction.NORTH_EAST,
+		  						  	Direction.EAST,
+		  						  	Direction.SOUTH_EAST,
+		  						  	Direction.SOUTH,
+		  						  	Direction.SOUTH_WEST,
+		  						  	Direction.WEST,
+                                  	Direction.NORTH_WEST,
+                                  	Direction.NONE};
 
   // Local map for combat
   // Stores energon of robots; + for allies, - for enemies
@@ -115,10 +118,11 @@ public class Combat{
    *  3. Compute the net value of moving in each movable direction (including none)
    *  4. Move in the direction with the highest net value
    *
-   *  enemyDanger can be set to change the cost of moving near enemies;
-   *  more configurable parameters may be added later.
+   * fightInDir() can be used to provide a bias towards a particular direction;
+   * this is important if we have a non-local goal, such as destroying an
+   * artillery. Direction.OMNI signifies no preference
    ***************************************************************************/
-  public void fight() throws GameActionException{
+  public void fightInDir(Direction d) throws GameActionException{
 	// 0. Reset map, costs and enemies
 	reset();
 	
@@ -128,16 +132,24 @@ public class Combat{
     // 2. Compute enemy values and costs
     evaluateEnemies();
 
-    // 3. Calculate the net score of adjacent squares and team097 square
+    // 3. Calculate the score of adjacent squares and team097 square
     double[] directionScores = computeScores();
+    
+    // 4. Bias the scores in favor of the preferred direction
+    if(d != Direction.OMNI){
+    	int idx = d.ordinal(); // ## test this - might need to fudge it
+    	directionScores[idx] += directionBias;
+    	directionScores[(idx+7) % 8] += directionBias/2; // left
+    	directionScores[(idx+1) % 8] += directionBias/2; // right
+    }
 
-    // 4. Move to the square with highest net score (possibly the team097 square)
-    double bestScore = directionScores[0];
-    int bestDirIdx = 0;
+    // 5. Move to the square with highest net score (possibly the team097 square)
+    double bestScore = directionScores[8];
+    int bestDirIdx = 8;
     
     //r.rc.setIndicatorString(2, Arrays.toString(directionScores)); //DEBUG
 
-    for(int i = 1; i < 9; i++){
+    for(int i = 0; i < 8; i++){
       if(directionScores[i] > bestScore){
         bestScore = directionScores[i];
         bestDirIdx = i;
@@ -145,7 +157,7 @@ public class Combat{
     }
 
     //canMove catches map edges and bytcode overrun (happens very occasionally)
-    if(bestDirIdx != 0 && r.rc.canMove(moveDirs[bestDirIdx])) // 0: Direction.None
+    if(bestDirIdx != 8 && r.rc.canMove(moveDirs[bestDirIdx])) // 8: Direction.None
       r.rc.move(moveDirs[bestDirIdx]);
   }
 
@@ -154,7 +166,6 @@ public class Combat{
    **************************************************************************/
   private void updateMap() throws GameActionException{
 
-	
 	// ## for complete eval of diagonal, radSquared should be 18; 
 	// ## only helps if ally can see for us, would need to check if squares are in bounds of array
     Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);
@@ -207,16 +218,16 @@ public class Combat{
   private double[] computeScores(){
     double[] directionCosts = new double[9];
 
-    directionCosts[0] = crossCost(3, 3);
-    directionCosts[1] = crossCost(2, 2);
-    directionCosts[2] = crossCost(3, 2);
-    directionCosts[3] = crossCost(4, 2);
-    directionCosts[4] = crossCost(2, 3);
-    directionCosts[5] = crossCost(4, 3);
-    directionCosts[6] = crossCost(2, 4);
-    directionCosts[7] = crossCost(3, 4);
-    directionCosts[8] = crossCost(4, 4);
-    
+    directionCosts[0] = crossCost(3, 2);
+    directionCosts[1] = crossCost(4, 2);
+    directionCosts[2] = crossCost(4, 3);
+    directionCosts[3] = crossCost(4, 4);
+    directionCosts[4] = crossCost(3, 4);
+    directionCosts[5] = crossCost(2, 4);
+    directionCosts[6] = crossCost(2, 3);
+    directionCosts[7] = crossCost(2, 2);
+    directionCosts[8] = crossCost(3, 3);
+   
     return directionCosts;
   }
 

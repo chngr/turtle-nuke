@@ -4,6 +4,8 @@ import current.Communicator;
 import current.HQRobot;
 import battlecode.common.*;
 
+// !!!!!!!!!!!!!!! TEAM097 IS THE PRIMARY TEAM NOW !!!!!!!!!!!!!!!!!!!!!
+
 //TODO: When shields, set as rally point and send [shield notification message?]
 
 //##TODO: switch to artillery detector
@@ -101,20 +103,25 @@ public class Swarm extends Strategy {
 	
 	// ## choose better
 	private RobotType[] buildOrder = {
-			RobotType.SUPPLIER,
-			RobotType.SUPPLIER,
-			RobotType.GENERATOR,
-			RobotType.SUPPLIER,
-			RobotType.SUPPLIER,
-			RobotType.GENERATOR,
-			RobotType.GENERATOR,
-			RobotType.SUPPLIER,
-			RobotType.SUPPLIER,
-			RobotType.GENERATOR,
-			RobotType.GENERATOR,
-			RobotType.SUPPLIER,
-			RobotType.SUPPLIER,
-			RobotType.SUPPLIER
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY,
+			RobotType.ARTILLERY	
 	};
 	private int buildIdx = 0;
 	private int chooseEncampment(){

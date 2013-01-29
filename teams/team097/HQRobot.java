@@ -43,9 +43,12 @@ public class HQRobot extends BaseRobot {
 
   HQRobot(RobotController rc) throws GameActionException{
     super(rc);
+    
     turtleNuke = new TurtleNuke(this);
     rush = new Rush(this);
     swarm = new Swarm(this);
+    
+    detector.turnOn(); // Turn on the artillery detector
     
     encampmentCounts = new int[7];
     
@@ -120,25 +123,22 @@ public class HQRobot extends BaseRobot {
   
   //##
   @Override
-  protected int processMessage(char[] data, int startIdx) {
+  protected int processMessage(char[] data, int startIdx) throws GameActionException {
 	  switch(data[startIdx]){
 		case 0:
 			// HACK: this seems to get called ~40 times/round (when we have no data?), so break the message read
 			// loop when it happens. Doesn't appear to mess with proper messages.
-			return data.length; 
-//					
-//		case 14: // Encampment alive notification
-//			encampmentCounts[data[startIdx+1]]++;
-//			builtEncampments++;
-//			break;
-//			
-//		case 15: // Encampment dead notification
-//			encampmentCounts[data[startIdx+1]]--;
-//			builtEncampments--;
-//			break;
+			return data.length;
+			
+		// Artillery detected; we need to tell new swarmers
+		// @@ centerLoc.x | centerLoc.y
+		case 6:
+			detector.detectedArtilleryAt(new MapLocation(data[startIdx+1],data[startIdx+2]));
+			break;
+
 			
 		default:
-			System.out.println("Unrecognised message"); //DEBUG
+			System.out.println("Unrecognised message"); //DEBUG*
 		}
 		return 3; // Minimum message length
   }
@@ -167,7 +167,7 @@ public class HQRobot extends BaseRobot {
   
   public void sendInitializeMessage(char[] data) throws GameActionException{
 	  //System.out.println("Sending:"+Integer.toString((int)data[0])); //DEBUG
-	  comm.putSticky(2, data);
+	  comm.send(comm.IDtoCurFreq(-Communicator.INIT_SPACE), data, data.length);
   }
   
   

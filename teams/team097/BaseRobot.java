@@ -11,6 +11,7 @@ public abstract class BaseRobot
 	public final Navigator nav; // We should put all the move functions in Navigator, i.e it should include SimpleNavigator, tunneling...
 								// They can then be called when the situation warrants, as nav.tunnelTo(loc)
 	public final Combat combat;
+	public final ArtilleryDetector detector;
 	
 	// State data
 	public final int maph, mapw;
@@ -44,6 +45,7 @@ public abstract class BaseRobot
 		this.comm = new Communicator(this);
 		this.nav = new Navigator(this);
 		this.combat = new Combat(this);
+		this.detector = new ArtilleryDetector(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();
@@ -65,13 +67,15 @@ public abstract class BaseRobot
 		
 		// Initialize subscribed sticky spaces 
 		subs = new int[64];
-		subscribe(1); // Subscribed to general by default
-		
+		subscribe(Communicator.GLOBAL_SPACE);
+		subscribe(Communicator.ARTILLERY_DETECTION_SPACE);
 	}
 	
 	public void run() throws GameActionException{
 		this.curLoc = rc.getLocation();
 		this.curRound = Clock.getRoundNum();
+		readAllMessages();
+		detector.update();
 	}
 	
 	
@@ -84,22 +88,28 @@ public abstract class BaseRobot
 		readMessages(comm.receive());
 	}
 	
-	protected void readMessages(char[] messageData){
+	protected void readMessages(char[] messageData) throws GameActionException{
 		int msgIdx = 0;
 		while(msgIdx < messageData.length-1){
 			msgIdx += processMessage(messageData, msgIdx);
 		}
 	}
 	// Return the length of the message
-	protected abstract int processMessage(char[] data, int startIdx);
+	protected abstract int processMessage(char[] data, int startIdx) throws GameActionException;
 	
-	protected void subscribe(int stickyNum){
+	public void subscribe(int stickyNum){
 		subs[numSubs++] = stickyNum;
 	}
 	
 	
 	public int age(){
 		return curRound - spawnRound;
+	}
+	
+	
+	private static final int ARTILLERY_DETECTED_MSG = 6;
+	public char[] buildArtilleryDetectedMessage(MapLocation loc){ //## stupid naming scheme
+		return new char[] {ARTILLERY_DETECTED_MSG, (char) loc.x, (char) loc.y};
 	}
 
 }

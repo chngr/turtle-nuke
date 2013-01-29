@@ -31,7 +31,7 @@ public class Artillery extends BaseRobot {
 //			doomed = false;
 //			sendAliveMessage();
 //		}
-		rc.suicide();
+		rc.yield();
 	}
 
 //

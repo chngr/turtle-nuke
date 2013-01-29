@@ -17,6 +17,8 @@ public class CombatBehavior extends Behavior {
 	private MapLocation prevLoc; // ## should this be in Base/SoldierRobot?
 	private int turnsImmobile = 0;
 	
+	private boolean nukeRush;
+	private boolean artilleryHunting;
 	
 	// Enemies and allies with 14 squares;
 	// reused for efficiency, but might want to
@@ -29,48 +31,24 @@ public class CombatBehavior extends Behavior {
 		super(r);
 	}
 	
-	// ## this is ad-hoc and messy
-	// ## setDefaultParams is not called anywhere, as we don't team097ly stop rushing
 	public void setDefaultParams(){
 		stalemateTimeout = 7;
 		allyDelta = 1;
 		r.combat.enemyHQVal = 20;
+		artilleryHunting = false;
 	}
-	// ## Is this rushy enough?
+	// ## @Values
 	public void setNukeRush(){
 		stalemateTimeout = 3;
 		allyDelta = -2;
 		r.combat.enemyHQVal = 80;
+		nukeRush = true;
 	}
-	
-	
-	
-	public void run() throws GameActionException{
-		if(r.curLoc.equals(prevLoc)){
-			turnsImmobile++;
-		} else {
-			turnsImmobile = 0;
-		}
-		
-		if(turnsImmobile >= stalemateTimeout){
-			allies14 = r.rc.senseNearbyGameObjects(Robot.class, 14, r.myTeam);
-			if(allies14.length -  enemies14.length >= allyDelta){ // ## This is biased towards finding allies; problem?
-				if(r.rc.senseNonAlliedMineLocations(r.curLoc, 14).length > 0){
-					breakMines();
-				} else {
-					r.combat.enemyCost = 3;
-					r.combat.farCostDiscount = 0.1; // ## should have proper way of doing this ##val?
-					r.combat.fight();
-					r.combat.enemyCost = 6;
-					r.combat.farCostDiscount = 0.9; // ## default
-				}
-			}
-			turnsImmobile = 0;
-		} else {
-			r.combat.fight();
-		}
-		
-		prevLoc = r.curLoc;
+	// ## !! @Values
+	public void setArtilleryHunt(){
+		stalemateTimeout = 4;
+		allyDelta = 0;
+		artilleryHunting = true;
 	}
 	
 	public void checkBehaviorChange(){
@@ -79,10 +57,50 @@ public class CombatBehavior extends Behavior {
 	}
 	
 	
+	public void run() throws GameActionException{
+		//## see swarmbehavior
+		if(r.detector.artilleryDetected && r.curLoc.distanceSquaredTo(r.detector.detectionLoc) < 256){
+			if(!artilleryHunting) setArtilleryHunt();
+			fight(r.curLoc.directionTo(r.detector.getTargetLocation()));
+		} else {
+			if(artilleryHunting) setDefaultParams();
+			fight(Direction.OMNI);
+		}
+	}
+	
+	private void fight(Direction d) throws GameActionException{
+		if(r.curLoc.equals(prevLoc)){
+			turnsImmobile++;
+		} else {
+			turnsImmobile = 0;
+		}
+		
+		if(turnsImmobile >= stalemateTimeout){
+			allies14 = r.rc.senseNearbyGameObjects(Robot.class, 14, r.myTeam);
+			if(allies14.length - enemies14.length >= allyDelta){ // ## This is biased towards finding allies; problem?
+				if(r.rc.senseNonAlliedMineLocations(r.curLoc, 14).length > 0){
+					breakMines();
+				} else {
+					r.combat.enemyCost = 3;
+					r.combat.farCostDiscount = 0.1; // ## should have proper way of doing this ##val?
+					r.combat.fightInDir(d);
+					r.combat.enemyCost = 6;
+					r.combat.farCostDiscount = 0.9; // ## default
+				}
+			}
+			turnsImmobile = 0;
+		} else {
+			r.combat.fightInDir(d);
+		}
+		
+		prevLoc = r.curLoc;
+	}
+	
+	
 	public void breakMines() throws GameActionException{
 		if(!allyDefusing()){
 			if(r.rc.hasUpgrade(Upgrade.DEFUSION)){
-				if(!engagingEnemy()){
+				if(!engagingEnemy() || artilleryHunting){ //## or nukeRush?
 					leapFrog();
 				}
 			} else {
@@ -115,7 +133,7 @@ public class CombatBehavior extends Behavior {
 	// Whether there is a enemy within immediate attack range
 	// i.e. a 5x5 square
 	private boolean engagingEnemy(){
-		return r.rc.senseNearbyGameObjects(Robot.class, 8, r.enemyTeam).length > 0;
+		return r.engagedEnemies.length > 0;
 	}
 	
 	private boolean allyDefusing() throws GameActionException{

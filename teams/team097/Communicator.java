@@ -23,6 +23,7 @@ comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 9
 team097 stickyspaces:
 1: General (everyone reads this)
 2: Initialization
+3: Swarm
 
 The maximum number of stickyspaces is 64.
 
@@ -48,7 +49,15 @@ public class Communicator
 		
 	private static final char magicChecksumVal = (char)0xB1;
 	
-	private static final int timeToLive = 1; // Needs to be at least 1 so that we can send to all robots at once
+	private static final int timeToLive = 2; // Needs to be at least 1 so that we can send to all robots at once
+	
+	
+	// List of Stickyspaces
+	public static final int GLOBAL_SPACE = 1;
+	public static final int INIT_SPACE = 2;
+	public static final int ARTILLERY_DETECTION_SPACE = 3;
+	public static final int SWARM_SPACE = 4;
+	
 	
 	Communicator(BaseRobot robot)
 	{
@@ -160,7 +169,7 @@ public class Communicator
 	}
 	
 	public void putSticky(int stickyNum, char[] data) throws GameActionException {
-		send(IDtoCurFreq(-stickyNum), data, data.length);
+		send(IDtoNextFreq(-stickyNum), data, data.length);
 //		r.rc.setIndicatorString(1, "Writing to "+IDtoCurFreq(-stickyNum)); //DEBUG
 //		r.rc.setIndicatorString(2, Integer.toString((int)data[0])+":"+Integer.toString((int)data[1])+":"+Integer.toString((int)data[2]));
 	}

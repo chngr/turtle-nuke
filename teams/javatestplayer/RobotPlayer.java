@@ -12,6 +12,8 @@ public class RobotPlayer {
 			try {
 				if (rc.getType() == RobotType.HQ) {
           hqCode(rc);
+				} else if(rc.getType() == RobotType.ARTILLERY){
+		  artilleryCode(rc);		
 				} else if (rc.getType() == RobotType.SOLDIER) {
           Combat fighter = new Combat(rc);
 
@@ -29,10 +31,12 @@ public class RobotPlayer {
                 if(rc.senseEncampmentSquare(rc.getLocation())){
                   if(rc.senseCaptureCost() <= rc.getTeamPower()){
                     RobotType build;
-                    if(Math.random() > 0.5)
-                      build = RobotType.SUPPLIER;
-                    else
-                      build = RobotType.GENERATOR;
+                    // ## testing with artillery
+                    build = RobotType.ARTILLERY;
+//                    if(Math.random() > 0.5)
+//                      build = RobotType.SUPPLIER;
+//                    else
+//                      build = RobotType.GENERATOR;
                     rc.captureEncampment(build);
                   }
                 }
@@ -83,7 +87,7 @@ public class RobotPlayer {
           rc.yield();
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        //e.printStackTrace();
       }
     }
   }
@@ -106,5 +110,13 @@ public class RobotPlayer {
         }
       }
     }
+  }
+  private static void artilleryCode(RobotController rc) throws GameActionException{
+	  if(rc.isActive()){
+			// Choose target
+			// ## should be like combat, build local map and search for good location
+			Robot[] enemies = rc.senseNearbyGameObjects(Robot.class, 64, rc.getTeam().opponent());
+			if(enemies.length > 0) rc.attackSquare(rc.senseLocationOf(enemies[0]));
+		}
   }
 }
