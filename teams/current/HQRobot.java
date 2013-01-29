@@ -43,7 +43,6 @@ public class HQRobot extends BaseRobot {
 
   HQRobot(RobotController rc) throws GameActionException{
     super(rc);
-    subscribe(3); // Swarm channel; we care about artillery detections
     
     turtleNuke = new TurtleNuke(this);
     rush = new Rush(this);
@@ -132,7 +131,7 @@ public class HQRobot extends BaseRobot {
 		// Artillery detected; we need to tell new swarmers
 		// @@ centerLoc.x | centerLoc.y
 		case 6:
-			swarm.detectedArtillery(new MapLocation(data[startIdx+1],data[startIdx+2]));
+			detector.detectedArtilleryAt(new MapLocation(data[startIdx+1],data[startIdx+2]));
 			break;
 
 			
@@ -166,7 +165,7 @@ public class HQRobot extends BaseRobot {
   
   public void sendInitializeMessage(char[] data) throws GameActionException{
 	  //System.out.println("Sending:"+Integer.toString((int)data[0])); //DEBUG
-	  comm.putSticky(2, data);
+	  comm.putSticky(Communicator.INIT_SPACE, data);
   }
   
   

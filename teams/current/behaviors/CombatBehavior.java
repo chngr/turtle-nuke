@@ -44,8 +44,22 @@ public class CombatBehavior extends Behavior {
 	}
 	
 	
+	public void checkBehaviorChange(){
+		enemies14 = r.rc.senseNearbyGameObjects(Robot.class, 14, r.enemyTeam);
+		if(enemies14.length == 0) r.setBehavior(r.prevBehavior);
+	}
+	
 	
 	public void run() throws GameActionException{
+		//## see swarmbehavior
+		if(r.detector.artilleryDetected && r.curLoc.distanceSquaredTo(r.detector.detectionLoc) < 256){
+			fight(r.curLoc.directionTo(r.detector.getTargetLocation()));
+		} else {
+			fight(Direction.OMNI);
+		}
+	}
+	
+	private void fight(Direction d) throws GameActionException{
 		if(r.curLoc.equals(prevLoc)){
 			turnsImmobile++;
 		} else {
@@ -60,22 +74,17 @@ public class CombatBehavior extends Behavior {
 				} else {
 					r.combat.enemyCost = 3;
 					r.combat.farCostDiscount = 0.1; // ## should have proper way of doing this ##val?
-					r.combat.fight();
+					r.combat.fightInDir(d);
 					r.combat.enemyCost = 6;
 					r.combat.farCostDiscount = 0.9; // ## default
 				}
 			}
 			turnsImmobile = 0;
 		} else {
-			r.combat.fight();
+			r.combat.fightInDir(d);
 		}
 		
 		prevLoc = r.curLoc;
-	}
-	
-	public void checkBehaviorChange(){
-		enemies14 = r.rc.senseNearbyGameObjects(Robot.class, 14, r.enemyTeam);
-		if(enemies14.length == 0) r.setBehavior(r.prevBehavior);
 	}
 	
 	

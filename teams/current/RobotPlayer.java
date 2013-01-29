@@ -23,10 +23,10 @@ public class RobotPlayer {
 			
 			while(true)
 			{
-				try{ // ##!! remove for testing !!
+				//try{ // ##!! remove for testing !!
 					br.run();
-				}
-				catch(Exception e){}
+//				}
+//				catch(Exception e){}
 
 				br.rc.yield();
 			}

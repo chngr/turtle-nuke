@@ -42,9 +42,9 @@ public class SoldierRobot extends BaseRobot {
 		
 		readAllMessages(); // in BaseRobot
 		
-		// ## this behavior shouldn't be spread out between soldierRobot and swarmBehavior
-		if(!swarmBehavior.artilleryHunting && detectArtilleryAttack()){
-			comm.putSticky(3, buildArtilleryDetectedMessage(curLoc)); // Swarm channel
+		// Artillery detection
+		if(detector.isOn() && !detector.artilleryDetected && detectArtilleryAttack()){
+			comm.putSticky(Communicator.ARTILLERY_DETECTION_SPACE, buildArtilleryDetectedMessage(curLoc));
 		}
 		prevEnergon = curEnergon;
 		curEnergon = rc.getEnergon();
@@ -55,8 +55,8 @@ public class SoldierRobot extends BaseRobot {
 		if (rc.isActive()) {			
 			currentBehavior.checkBehaviorChange();
 			currentBehavior.run();
-			//## use remaining bytecodes if we don't need to conserve power
 		}
+		//## use remaining bytecodes if we don't need to conserve power
 	}
 	
 	// Return the length of the message
@@ -87,8 +87,8 @@ public class SoldierRobot extends BaseRobot {
 			break;
 			
 		case 4: // Swarm @@ target.x | target.y
-			subscribe(3); // Swarm channel
 			setBehavior(swarmBehavior);
+			swarmBehavior.init();
 			swarmBehavior.target = new MapLocation(data[startIdx+1],data[startIdx+2]);
 			break;
 			
@@ -98,17 +98,9 @@ public class SoldierRobot extends BaseRobot {
 			break;
 			
 		case 6: // Artillery detected @@ detectionLoc.x | detectionLoc.y
-			// ## rush too?
-			// Sent on the swarm channel; if we get it, we care
-			swarmBehavior.detectedArtillery(new MapLocation(data[startIdx+1],data[startIdx+2]));
+			detector.detectedArtilleryAt(new MapLocation(data[startIdx+1],data[startIdx+2]));
 			break;
-		
 
-		// Artillery destroyed; HQ needs to know, other robots need
-		// to know not to send the message if it's been sent
-		case 7: 
-			swarmBehavior.clearArtilleryMode();
-			break;
 			
 		default:
 			System.out.println("Unrecognised message: " + (int)data[startIdx]); //DEBUG*
@@ -138,8 +130,4 @@ public class SoldierRobot extends BaseRobot {
 		return false;
 	}
 	
-	private static final int ARTILLERY_DESTROYED_MSG = 7;
-	public char[] buildArtilleryDestroyedMessage(){
-		return new char[] {ARTILLERY_DESTROYED_MSG, 0, 0};
-	}
 }

@@ -69,6 +69,9 @@ public class Combat{
   public double enemyEncampmentVal = 10;
   public double enemyArtilleryVal = 90; //##? They *are* dangerous... should probably be higher than nukeRush HQ val (cur 80)
   
+  // How strongly to bias the combat algorithm when we have a preferred direction 
+  public double directionBias = 5; // ## TEST THIS VALUE
+  
   // Discount factors for enemies two squares away
   // We only count the cost of unengaged far enemies; they are about as dangerous as adjacent ones
   public double farCostDiscount = 0.9;
@@ -115,10 +118,11 @@ public class Combat{
    *  3. Compute the net value of moving in each movable direction (including none)
    *  4. Move in the direction with the highest net value
    *
-   *  enemyDanger can be set to change the cost of moving near enemies;
-   *  more configurable parameters may be added later.
+   * fightInDir() can be used to provide a bias towards a particular direction;
+   * this is important if we have a non-local goal, such as destroying an
+   * artillery. Direction.OMNI signifies no preference
    ***************************************************************************/
-  public void fight() throws GameActionException{
+  public void fightInDir(Direction d) throws GameActionException{
 	// 0. Reset map, costs and enemies
 	reset();
 	
@@ -128,10 +132,18 @@ public class Combat{
     // 2. Compute enemy values and costs
     evaluateEnemies();
 
-    // 3. Calculate the net score of adjacent squares and current square
+    // 3. Calculate the score of adjacent squares and current square
     double[] directionScores = computeScores();
+    
+    // 4. Bias the scores in favor of the preferred direction
+    if(d != Direction.OMNI){
+    	int idx = d.ordinal() + 1; // ## test this - might need to fudge it
+    	directionScores[idx] += directionBias;
+    	directionScores[idx+8 % 9] += directionBias/2; // left
+    	directionScores[idx+1 % 9] += directionBias/2; // right
+    }
 
-    // 4. Move to the square with highest net score (possibly the current square)
+    // 5. Move to the square with highest net score (possibly the current square)
     double bestScore = directionScores[0];
     int bestDirIdx = 0;
     
@@ -154,7 +166,6 @@ public class Combat{
    **************************************************************************/
   private void updateMap() throws GameActionException{
 
-	
 	// ## for complete eval of diagonal, radSquared should be 18; 
 	// ## only helps if ally can see for us, would need to check if squares are in bounds of array
     Robot[] nearbyRobots = r.rc.senseNearbyGameObjects(Robot.class, 14);

@@ -1,12 +1,14 @@
 package current.strategies;
 
+import current.Communicator;
 import current.HQRobot;
 import battlecode.common.*;
 
 //TODO: When shields, set as rally point and send [shield notification message?]
 
+//##TODO: switch to artillery detector
 //TODO: Persistent artillery search: send the current index
-//##TODO: Use spawnSwarm method: spawn, init, also artillery hunt if relevant
+//##TODO: Use the spawnSwarm method
 
 //TODO: Initial path clearing scout(s) (travel mode flee?)
 //TODO: Combat channel: call unengaged allies when we fight. Swarm behavior?
@@ -24,14 +26,6 @@ public class Swarm extends Strategy {
 	
 	private int rushDelay = 30; // Min time between charging
 	private int coolDown = 0;
-	
-	
-	// Artillery hunting variables
-	public boolean artilleryHunting; //##?
-	private MapLocation artilleryDetection; // Where the artillery was detected
-	private MapLocation[] possibleArtilleryLocs;
-	private int trialIdx;
-	public MapLocation artilleryLoc; // Once we've found the actual artillery
 	
 	
 	public Swarm(HQRobot HQ) {
@@ -55,18 +49,14 @@ public class Swarm extends Strategy {
 
 	@Override
 	public void run() throws GameActionException {
-		
-		if(artilleryHunting && artilleryLoc == null){
-			searchForArtillery(); // Always search, so we don't miss someone finding it
-		}
 
 		if(HQ.rc.isActive()){
 			if(HQ.curRound < initialCapturePeriod){ //## should extract these tests
 				if(HQ.spawn()) HQ.sendInitializeMessage( HQ.buildCaptureMessage(chooseEncampment()) );
 				else research();
 			} else {
-				if(!HQ.lowPower() && HQ.spawn()) HQ.sendInitializeMessage( HQ.buildSwarmMessage(rallyPoint) );
-				else research();
+				if(HQ.lowPower()) research();
+				else spawnSwarm();
 			}
 		}
 		
@@ -75,7 +65,7 @@ public class Swarm extends Strategy {
 		     || HQ.rc.senseNearbyGameObjects(Robot.class, rallyPoint, 34, HQ.myTeam).length > swarmThreshold)
 				&& coolDown == 0){
 			
-			HQ.comm.putSticky(3, HQ.buildSwarmMessage(HQ.eHQ)); // Swarm channel
+			HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildSwarmMessage(HQ.eHQ)); // Swarm channel
 			coolDown = rushDelay;
 		}
 		if(coolDown > 0) coolDown--;
@@ -135,46 +125,14 @@ public class Swarm extends Strategy {
 	private void spawnSwarm() throws GameActionException{
 		if(HQ.spawn()){
 			HQ.sendInitializeMessage( HQ.buildSwarmMessage(rallyPoint) );
-			if(artilleryDetection != null){
+			if(HQ.detector.artilleryDetected){
 				//## !! @* send the current index for persistent search - will also work if we've found it
-				HQ.sendInitializeMessage( HQ.buildArtilleryDetectedMessage(artilleryDetection) );
+				HQ.sendInitializeMessage( HQ.buildArtilleryDetectedMessage(HQ.detector.detectionLoc) );
 			}
 		} else { // We're blocked; shouldn't happen
-			HQ.comm.putSticky(3, HQ.buildSwarmMessage(HQ.eHQ)); // Send forth the swarm; might unblock us
+			HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildSwarmMessage(HQ.eHQ)); // Send forth the swarm; might unblock us
 			research();
 		}
 	}
 	
-	
-	// Artillery detection - copied from SwarmBehavior
-	public void detectedArtillery(MapLocation detectionLoc) throws GameActionException{
-		// Get a list of all neutral/enemy encampment squares in artillery range
-		possibleArtilleryLocs = HQ.rc.senseEncampmentSquares(detectionLoc, 64, Team.NEUTRAL); //## !! add one real square to rad for splash
-		trialIdx = 0; //## will be passed index when persistent search
-	}
-	public void clearArtilleryMode(){ //? name?
-		artilleryLoc = null;
-		trialIdx = 0;
-		artilleryHunting = false;
-	}
-	
-	private void searchForArtillery() throws GameActionException{
-		while(HQ.rc.canSenseSquare(possibleArtilleryLocs[trialIdx])){
-			Robot e = (Robot) HQ.rc.senseObjectAtLocation(possibleArtilleryLocs[trialIdx]);
-			if(e != null){
-				RobotInfo ri = HQ.rc.senseRobotInfo(e);
-				if(ri.type == RobotType.ARTILLERY){
-					artilleryLoc = ri.location;
-					break;
-				}
-			}
-			trialIdx++;
-			
-			// Tried all of them; must have missed the artillery's death
-			if(trialIdx == possibleArtilleryLocs.length){ 
-				clearArtilleryMode();
-				break;
-			}
-		}
-	}
 }

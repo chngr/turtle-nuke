@@ -51,6 +51,14 @@ public class Communicator
 	
 	private static final int timeToLive = 1; // Needs to be at least 1 so that we can send to all robots at once
 	
+	
+	// List of Stickyspaces
+	public static final int GLOBAL_SPACE = 1;
+	public static final int INIT_SPACE = 2;
+	public static final int ARTILLERY_DETECTION_SPACE = 3;
+	public static final int SWARM_SPACE = 4;
+	
+	
 	Communicator(BaseRobot robot)
 	{
 		this.r = robot;

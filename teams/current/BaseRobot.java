@@ -11,6 +11,7 @@ public abstract class BaseRobot
 	public final Navigator nav; // We should put all the move functions in Navigator, i.e it should include SimpleNavigator, tunneling...
 								// They can then be called when the situation warrants, as nav.tunnelTo(loc)
 	public final Combat combat;
+	public final ArtilleryDetector detector;
 	
 	// State data
 	public final int maph, mapw;
@@ -44,6 +45,7 @@ public abstract class BaseRobot
 		this.comm = new Communicator(this);
 		this.nav = new Navigator(this);
 		this.combat = new Combat(this);
+		this.detector = new ArtilleryDetector(this);
 		
 		// Initialize data
 		this.id = rc.getRobot().getID();
@@ -65,8 +67,8 @@ public abstract class BaseRobot
 		
 		// Initialize subscribed sticky spaces 
 		subs = new int[64];
-		subscribe(1); // Subscribed to general by default
-		
+		subscribe(Communicator.GLOBAL_SPACE);
+		subscribe(Communicator.ARTILLERY_DETECTION_SPACE);
 	}
 	
 	public void run() throws GameActionException{
@@ -93,7 +95,7 @@ public abstract class BaseRobot
 	// Return the length of the message
 	protected abstract int processMessage(char[] data, int startIdx) throws GameActionException;
 	
-	protected void subscribe(int stickyNum){
+	public void subscribe(int stickyNum){
 		subs[numSubs++] = stickyNum;
 	}
 	
