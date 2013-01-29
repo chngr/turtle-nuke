@@ -115,7 +115,7 @@ public class CombatBehavior extends Behavior {
 	// Whether there is a enemy within immediate attack range
 	// i.e. a 5x5 square
 	private boolean engagingEnemy(){
-		return r.rc.senseNearbyGameObjects(Robot.class, 8, r.enemyTeam).length > 0;
+		return r.engagedEnemies.length > 0;
 	}
 	
 	private boolean allyDefusing() throws GameActionException{

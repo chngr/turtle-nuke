@@ -34,7 +34,7 @@ import battlecode.common.*;
 //a check for that, or just accept our inevitable doom. In practice, happens very rarely (< 1/10 games)
 //However, combat.fight() does take ~8500 bytecodes in heavy combat situations; drains our power.
 
-
+//TODO: Mine cost proportional to shields (we have cached in robot)
 //TODO: Set enemy cost 0 if not active (defusing, mining)
 
 
@@ -62,12 +62,12 @@ public class Combat{
   public double enemyEnergonScale = 1/20; // We subtract (enemy energon) * scale from the enemy's value
   
   // Cost of moving onto a mine; if this is 0, we ignore mines
-  // ## should defuse instead
   public double mineCost = 1000;
   
   // Value of attacking enemy HQ and encampments
   public double enemyHQVal = 20;
   public double enemyEncampmentVal = 10;
+  public double enemyArtilleryVal = 90; //##? They *are* dangerous... should probably be higher than nukeRush HQ val (cur 80)
   
   // Discount factors for enemies two squares away
   // We only count the cost of unengaged far enemies; they are about as dangerous as adjacent ones

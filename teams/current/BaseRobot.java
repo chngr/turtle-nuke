@@ -84,14 +84,14 @@ public abstract class BaseRobot
 		readMessages(comm.receive());
 	}
 	
-	protected void readMessages(char[] messageData){
+	protected void readMessages(char[] messageData) throws GameActionException{
 		int msgIdx = 0;
 		while(msgIdx < messageData.length-1){
 			msgIdx += processMessage(messageData, msgIdx);
 		}
 	}
 	// Return the length of the message
-	protected abstract int processMessage(char[] data, int startIdx);
+	protected abstract int processMessage(char[] data, int startIdx) throws GameActionException;
 	
 	protected void subscribe(int stickyNum){
 		subs[numSubs++] = stickyNum;
@@ -100,6 +100,12 @@ public abstract class BaseRobot
 	
 	public int age(){
 		return curRound - spawnRound;
+	}
+	
+	
+	private static final int ARTILLERY_DETECTED_MSG = 6;
+	public char[] buildArtilleryDetectedMessage(MapLocation loc){ //## stupid naming scheme
+		return new char[] {ARTILLERY_DETECTED_MSG, (char) loc.x, (char) loc.y};
 	}
 
 }

@@ -23,6 +23,7 @@ comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 9
 Current stickyspaces:
 1: General (everyone reads this)
 2: Initialization
+3: Swarm
 
 The maximum number of stickyspaces is 64.
 
