@@ -298,19 +298,43 @@ public class Navigator {
 	// Useful if the path is going to be traveled often, or we don't want mines there
 	
     public void tunnelTo(MapLocation loc) throws   GameActionException{
+    	looseTunnel(loc); // ## TEST
+//    	Direction dir = r.curLoc.directionTo(loc);
+//    	
+//    	//## !! other movements want this !!
+//    	if(r.util.senseHostileMine(r.curLoc)){ // Stepped on undetected enemy mine
+//    		moveNear(dir); // Make sure we move, not defuse
+//    		return;
+//    	}
+//		if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
+//		    if(r.rc.canMove(dir)) moveOrDefuse(dir);
+//		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
+//		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
+//		    // ##?
+//		    else if(r.rc.canMove(dir.rotateRight().rotateRight()))  moveOrDefuse(dir.rotateRight().rotateRight());
+//		    else if(r.rc.canMove(dir.rotateLeft().rotateLeft()))  moveOrDefuse(dir.rotateLeft().rotateLeft());
+//
+//		}
+	}
+    
+    public void looseTunnel(MapLocation loc) throws GameActionException{
     	Direction dir = r.curLoc.directionTo(loc);
-    	
-    	//## !! other movements want this !!
     	if(r.util.senseHostileMine(r.curLoc)){ // Stepped on undetected enemy mine
     		moveNear(dir); // Make sure we move, not defuse
     		return;
     	}
-		if(!loc.equals(r.rc.getLocation())){ //apparently necessary; why doesn't canMove catch this?
-		    if(r.rc.canMove(dir)) moveOrDefuse(dir);
-		    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
-		    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
-		}
-	}
+    	if(r.rc.canMove(dir) && !r.util.senseHostileMine(r.curLoc.add(dir))) r.rc.move(dir);
+	    else if(r.rc.canMove(dir.rotateRight()) && !r.util.senseHostileMine(r.curLoc.add(dir.rotateRight())))  r.rc.move(dir.rotateRight());
+	    else if(r.rc.canMove(dir.rotateLeft()) && !r.util.senseHostileMine(r.curLoc.add(dir.rotateLeft())))  r.rc.move(dir.rotateLeft()); 
+	    
+	    else if(r.rc.canMove(dir)) moveOrDefuse(dir);
+	    else if(r.rc.canMove(dir.rotateRight()))  moveOrDefuse(dir.rotateRight());
+	    else if(r.rc.canMove(dir.rotateLeft()))  moveOrDefuse(dir.rotateLeft());
+	    // ##?
+	    else if(r.rc.canMove(dir.rotateRight().rotateRight()))  moveOrDefuse(dir.rotateRight().rotateRight());
+	    else if(r.rc.canMove(dir.rotateLeft().rotateLeft()))  moveOrDefuse(dir.rotateLeft().rotateLeft());
+    }
+    
 	
 	public boolean moveOrDefuse(Direction dir) throws GameActionException{
 		MapLocation loc = r.rc.getLocation().add(dir);
