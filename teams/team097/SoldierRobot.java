@@ -107,7 +107,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	public void setBehavior(Behavior b){
-		rc.setIndicatorString(1, b.getClass().getName()); //DEBUG*
+		//rc.setIndicatorString(1, b.getClass().getName()); //DEBUG
 		prevBehavior = team097Behavior;
 		team097Behavior = b;
 	}
