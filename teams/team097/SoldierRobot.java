@@ -79,9 +79,9 @@ public class SoldierRobot extends BaseRobot {
 			break;
 			
 		case 3: // Rush @@ nukeRush? | 0
-			setBehavior(travelBehavior);
-			travelBehavior.reset();
-			travelBehavior.destination = eHQ;
+			setBehavior(swarmBehavior);
+			swarmBehavior.init();
+			swarmBehavior.target = eHQ;
 			if(data[startIdx+1] == 1) combatBehavior.setNukeRush();
 			//travelBehavior.rushDistance = 2; //## is this helpful?
 			break;

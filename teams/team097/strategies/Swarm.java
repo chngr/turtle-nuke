@@ -130,8 +130,10 @@ public class Swarm extends Strategy {
 				HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildSwarmMessage(HQ.eHQ));
 			}
 			coolDown = rushDelay;
-			capt1 = true; // Reset the captures for this wave
-			capt2 = true;
+			if(!enemyNuke){
+				capt1 = true; // Reset the captures for this wave
+				capt2 = true;
+			}
 			hunt = true;
 		}
 		if(coolDown > 0) coolDown--;
