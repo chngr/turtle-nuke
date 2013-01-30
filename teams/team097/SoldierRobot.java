@@ -92,7 +92,8 @@ public class SoldierRobot extends BaseRobot {
 			
 		case 5: // Capture @@ encampmentOrdinal | 0
 			setBehavior(captureBehavior);
-			captureBehavior.encampmentType = RobotType.values()[data[startIdx+1]];
+			if(data[startIdx+1] != 0)
+				captureBehavior.encampmentType = RobotType.values()[data[startIdx+1] - 1];
 			break;
 			
 		case 6: // Artillery detected @@ detectionLoc.x | detectionLoc.y

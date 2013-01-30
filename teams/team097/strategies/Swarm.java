@@ -22,12 +22,18 @@ public class Swarm extends Strategy {
 	
 	private int initialCapturePeriod;
 	
-	private MapLocation rallyPoint; //## may not want this in a more sophisticated version
+	private MapLocation rallyPoint;
+	private int rallyCount; // Number of our robots near the rally point
 	
 	private int rushDelay = 30; // Min time between charging
 	private int coolDown = 0;
 	
 	public Upgrade prioritizedResearch;
+	public boolean captureNext;
+	
+	// Ad hoc later encampments
+	private boolean capt1;
+	private boolean capt2;
 	
 	private boolean enemyNuke;
 	private int roundsSinceNukeDetected = 0;
@@ -47,6 +53,15 @@ public class Swarm extends Strategy {
 			prioritizedResearch = Upgrade.DEFUSION;
 			HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildRushMessage(true));
 			// ## make a couple of backdoorers
+		}
+		
+		rallyCount = HQ.rc.senseNearbyGameObjects(Robot.class, rallyPoint, 34, HQ.myTeam).length;
+		if(capt1 && rallyCount > 4){
+			captureNext = true;
+			capt1 = false;
+		} else if(capt2 && rallyCount > 14){
+			captureNext = true;
+			capt2 = false;
 		}
 	}
 
@@ -75,7 +90,14 @@ public class Swarm extends Strategy {
 					prioritizedResearch = null;
 					spawnSwarm();
 				}
-			} else {
+			} else if(captureNext){
+				if(HQ.spawn()){
+					HQ.sendInitializeMessage( HQ.buildCaptureMessage(chooseEncampment()) );
+					captureNext = false;
+				}
+				else research();
+			}
+			else {
 				if(HQ.lowPower()) research();
 				else spawnSwarm();
 			}
@@ -84,7 +106,7 @@ public class Swarm extends Strategy {
 		
 		// Check whether to charge
 		if( (HQ.lowPower() 
-		     || HQ.rc.senseNearbyGameObjects(Robot.class, rallyPoint, 34, HQ.myTeam).length > swarmThreshold)
+		     || rallyCount > swarmThreshold)
 				&& coolDown == 0){
 			if(enemyNuke){
 				HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildRushMessage(true));
@@ -92,6 +114,8 @@ public class Swarm extends Strategy {
 				HQ.comm.putSticky(Communicator.SWARM_SPACE, HQ.buildSwarmMessage(HQ.eHQ));
 			}
 			coolDown = rushDelay;
+			capt1 = true; // Reset the captures for this wave
+			capt2 = true;
 		}
 		if(coolDown > 0) coolDown--;
 		//## else plan stuff, at least initially: improve map evaluation, determine next encampment locations...
@@ -140,11 +164,21 @@ public class Swarm extends Strategy {
 			RobotType.GENERATOR,
 			RobotType.SUPPLIER,
 			RobotType.SUPPLIER,
+			RobotType.SUPPLIER,
+			RobotType.GENERATOR,
+			RobotType.GENERATOR,
+			RobotType.SUPPLIER,
+			RobotType.SUPPLIER,
+			RobotType.SUPPLIER,
 			RobotType.SUPPLIER
 	};
 	private int buildIdx = 0;
 	private int chooseEncampment(){
-		return buildOrder[buildIdx++].ordinal(); //## if we add encampments later, need a different mechanism for it
+		if(buildIdx < buildOrder.length){
+			return buildOrder[buildIdx++].ordinal() + 1; // 0 means the robot chooses
+		} else {
+			return 0;
+		}
 	}
 	
 	

@@ -126,7 +126,7 @@ public class CaptureBehavior extends Behavior {
     int distToTeamHQ = r.curLoc.distanceSquaredTo(r.HQ);
     if(distToEnemyHQ <= 64 || distToTeamHQ <= 64) {
       return RobotType.ARTILLERY;
-    } else if(Math.random() < 0.5) {
+    } else if(Math.random() < 0.4) {
       return RobotType.GENERATOR;
     } else {
       return RobotType.SUPPLIER;
