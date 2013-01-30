@@ -9,7 +9,7 @@ In our internal representation of the map/costs:
 [object id (if relevant)]  [square attributes]
        16 bits             16 bits
 e.g. 0x0002000A = object id 2 with content of type 10
-team097 square attributes:
+current square attributes:
 0x00000001: hostile mine
 *************************************/
 
@@ -19,7 +19,7 @@ import battlecode.common.*;
 
 // SEARCH:
 // *** I think there might be unmerged bugfixes and improvements in test
-//TODO: !!! Do the next search (centered at the team097 goal location) while moving !!!
+//TODO: !!! Do the next search (centered at the current goal location) while moving !!!
 // - Should start with a shallow search or delegate to another movement method
 //   while first search is in progress
 
@@ -83,14 +83,14 @@ public class Navigator {
 	private Direction[] path;
 	private int pathIdx;
 	private int searchTimer = 0;
-	private MapLocation team097Dest;
+	private MapLocation currentDest;
 
 	public Direction moveTo(MapLocation dest) throws GameActionException{
 		if(r.rc.isActive()){
-			if(!dest.equals(team097Dest) || (searchTimer %= searchFreq) == 0){
+			if(!dest.equals(currentDest) || (searchTimer %= searchFreq) == 0){
 				updateMap();
 				
-				team097Dest = dest;
+				currentDest = dest;
 				pathIdx = 0;
 				
 				path = search(dest);

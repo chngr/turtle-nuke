@@ -132,7 +132,7 @@ public class Combat{
     // 2. Compute enemy values and costs
     evaluateEnemies();
 
-    // 3. Calculate the score of adjacent squares and team097 square
+    // 3. Calculate the score of adjacent squares and current square
     double[] directionScores = computeScores();
     
     // 4. Bias the scores in favor of the preferred direction
@@ -143,7 +143,7 @@ public class Combat{
     	directionScores[(idx+1) % 8] += directionBias/2; // right
     }
 
-    // 5. Move to the square with highest net score (possibly the team097 square)
+    // 5. Move to the square with highest net score (possibly the current square)
     double bestScore = directionScores[8];
     int bestDirIdx = 8;
     

@@ -10,7 +10,7 @@ import battlecode.common.*;
 //- Some way of communicating breach?
 //- Minesweep neutrals first? Minesweep behavior?
 
-//team097 ISSUES: - Get stuck in support when should be in defend (hacked to always enter defend)
+//CURRENT ISSUES: - Get stuck in support when should be in defend (hacked to always enter defend)
 //				  - Defend doesn't work for larger fortifications (same as above?)
 
 public class FortifyBehavior extends Behavior {

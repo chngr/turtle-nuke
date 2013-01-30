@@ -7,7 +7,7 @@ import battlecode.common.*;
 // We don't need to notify when locations are checked, when one
 // robot can see it all the others will have a chance to sense
 // before that robot would move away
-// ## New robots won't know the team097 progress, and progress is lost with
+// ## New robots won't know the current progress, and progress is lost with
 // the original swarm; HQ sensing through them after all? then no destroyed msg !! @*
 
 // ## Also if the lone sensor is destroyed immediately;

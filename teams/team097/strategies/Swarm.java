@@ -7,7 +7,7 @@ import battlecode.common.*;
 //TODO: When shields, set as rally point and send [shield notification message?]
 
 //##TODO: switch to artillery detector
-//TODO: Persistent artillery search: send the team097 index
+//TODO: Persistent artillery search: send the current index
 //##TODO: Use the spawnSwarm method
 
 //TODO: Initial path clearing scout(s) (travel mode flee?)
@@ -149,7 +149,7 @@ public class Swarm extends Strategy {
 	}
 
 //	//## this encampment logic is bad, we should improve it
-//	private int encampmentCount = 0; // team097ly not adjusted for lost encampments
+//	private int encampmentCount = 0; // currently not adjusted for lost encampments
 //	private int encampmentTimer = 0;
 //	private int encampmentPeriod;
 //	private boolean wantEncampment(){
