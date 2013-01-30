@@ -6,7 +6,7 @@ import battlecode.common.*;
 
 public class SoldierRobot extends BaseRobot {
 	
-	public Behavior team097Behavior;
+	public Behavior currentBehavior;
 	public Behavior prevBehavior;
 	
 	public CombatBehavior combatBehavior;
@@ -32,7 +32,7 @@ public class SoldierRobot extends BaseRobot {
         fortifyBehavior = new FortifyBehavior(this);
         scoutBehavior = new ScoutBehavior(this);
         travelBehavior = new TravelBehavior(this);
-        team097Behavior = scoutBehavior; //default
+        currentBehavior = scoutBehavior; //default
         readMessages(comm.getSticky(2)); // Initialization message
 	}
 
@@ -51,8 +51,8 @@ public class SoldierRobot extends BaseRobot {
 		engagedEnemies = rc.senseNearbyGameObjects(Robot.class, 8, enemyTeam);
 		
 		if (rc.isActive()) {			
-			team097Behavior.checkBehaviorChange();
-			team097Behavior.run();
+			currentBehavior.checkBehaviorChange();
+			currentBehavior.run();
 		}
 		//## use remaining bytecodes if we don't need to conserve power
 	}
@@ -109,8 +109,8 @@ public class SoldierRobot extends BaseRobot {
 	
 	public void setBehavior(Behavior b){
 		//rc.setIndicatorString(1, b.getClass().getName()); //DEBUG
-		prevBehavior = team097Behavior;
-		team097Behavior = b;
+		prevBehavior = currentBehavior;
+		currentBehavior = b;
 	}
 	
 	

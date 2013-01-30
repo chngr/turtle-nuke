@@ -7,7 +7,7 @@ import battlecode.common.*;
 
 public class TurtleNuke extends Strategy {
 
-	private static final int FORTIFY_RADIUS = 2; // May want something more sophisticated, e.g. layers ## not team097ly used
+	private static final int FORTIFY_RADIUS = 2; // May want something more sophisticated, e.g. layers ## not currently used
 	private int stage = 0; // Strategy stage; have this?
 	
 	public TurtleNuke(HQRobot HQ){

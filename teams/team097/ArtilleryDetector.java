@@ -7,7 +7,7 @@ public class ArtilleryDetector {
 	private BaseRobot r;
 	
 	
-	private boolean on; // Whether we team097ly care about artillery at all
+	private boolean on; // Whether we currently care about artillery at all
 	
 	public boolean artilleryDetected;
 	public MapLocation detectionLoc; // Where the artillery was detected

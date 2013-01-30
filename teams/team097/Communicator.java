@@ -4,7 +4,7 @@ package team097;
 Communicator.java - Communications interface
 Encapsulates all communications-related functions.
 
-Each robot has a unique offset in the frequency table that depends on the team097 round number.
+Each robot has a unique offset in the frequency table that depends on the current round number.
 The [maxMsgQueueLen] consecutive channels starting at that offset is that robot's "inbox".
 This implements a naive frequency-hopping scheme.
 
@@ -13,14 +13,14 @@ Stickyspaces can be accessed by posting to id = -(sticky#).
 
 Each channel contains a 32-bit packet, containing:
 |Data byte 3| |Data byte 2| |Data byte 1| |Checksum + timestamp byte|
-where the checksum byte is calculated by xoring the data bytes with the team097 round number.
+where the checksum byte is calculated by xoring the data bytes with the current round number.
 
 Example (for posting to stickyspace):
-comm.receive(comm.IDtoCurFreq(-1)) receives data sent to the team097 round.
+comm.receive(comm.IDtoCurFreq(-1)) receives data sent to the current round.
 comm.send(comm.IDtoNextFreq(-1), data, 3) sends 3 bytes of data to the next round.
 comm.send(comm.IDtoFreqNRoundsLater(-1, 90), data, 3) sends 3 bytes of data to 90 rounds later.
 
-team097 stickyspaces:
+current stickyspaces:
 1: General (everyone reads this)
 2: Initialization
 3: Swarm

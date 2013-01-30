@@ -15,7 +15,7 @@ public class HQRobot extends BaseRobot {
   private double prevPower = 200;
   private double power = 200;
   
-  public Strategy team097Strategy;
+  public Strategy currentStrategy;
   
   // Strategies
   public TurtleNuke turtleNuke;
@@ -53,16 +53,16 @@ public class HQRobot extends BaseRobot {
     encampmentCounts = new int[7];
     
     evaluateMap();
-    team097Strategy = pickStrategy();
-    team097Strategy.begin();
+    currentStrategy = pickStrategy();
+    currentStrategy.begin();
   }
 
   public void run() throws GameActionException {
 	  super.run();
 	  updatePower();
 	  updateEncampments();
-	  team097Strategy.checkStrategyChange();
-	  team097Strategy.run();
+	  currentStrategy.checkStrategyChange();
+	  currentStrategy.run();
   }
   
   
@@ -172,7 +172,7 @@ public class HQRobot extends BaseRobot {
   
   
   public void setStrategy(Strategy s) throws GameActionException{
-	  team097Strategy = s;
+	  currentStrategy = s;
 	  s.begin();
   }
   
