@@ -31,12 +31,12 @@ public class RobotPlayer {
                 if(rc.senseEncampmentSquare(rc.getLocation())){
                   if(rc.senseCaptureCost() <= rc.getTeamPower()){
                     RobotType build;
-                    // ## testing with artillery
-                    //build = RobotType.ARTILLERY;
-                    if(Math.random() > 0.5)
-                      build = RobotType.SUPPLIER;
-                    else
-                      build = RobotType.GENERATOR;
+                     //## testing with artillery
+                    build = RobotType.ARTILLERY;
+//                    if(Math.random() > 0.5)
+//                      build = RobotType.SUPPLIER;
+//                    else
+//                      build = RobotType.GENERATOR;
                     rc.captureEncampment(build);
                   }
                 }
@@ -99,7 +99,7 @@ public class RobotPlayer {
         rc.spawn(dir);
       // Tries to spawn, otherwise shall research instead
       else{
-        Upgrade[] upgrades = {Upgrade.PICKAXE, Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.VISION, Upgrade.NUKE};
+        Upgrade[] upgrades = {Upgrade.PICKAXE, Upgrade.NUKE, Upgrade.FUSION, Upgrade.DEFUSION, Upgrade.VISION};
         for(int i = 0; i < 5; i++){
           if(rc.hasUpgrade(upgrades[i]))
             continue;
