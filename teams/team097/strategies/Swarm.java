@@ -29,11 +29,15 @@ public class Swarm extends Strategy {
 	private int coolDown = 0;
 	
 	public Upgrade prioritizedResearch;
-	public boolean captureNext;
 	
-	// Ad hoc later encampments
+	// Ad hoc assignment of other behaviors
+	public boolean captureNext;
+	public boolean huntNext;
+	
 	private boolean capt1;
 	private boolean capt2;
+	private boolean hunt;
+	private boolean huntLeft = true; // Whether to hunt on the left or right
 	
 	private boolean enemyNuke;
 	private int roundsSinceNukeDetected = 0;
@@ -59,7 +63,13 @@ public class Swarm extends Strategy {
 		if(capt1 && rallyCount > 4){
 			captureNext = true;
 			capt1 = false;
-		} else if(capt2 && rallyCount > 14){
+		}
+		else if(hunt && rallyCount > 8){
+			huntNext = true;
+			hunt = false;
+			huntLeft = !huntLeft;
+		}
+		else if(capt2 && rallyCount > 14){
 			captureNext = true;
 			capt2 = false;
 		}
@@ -96,6 +106,12 @@ public class Swarm extends Strategy {
 					captureNext = false;
 				}
 				else research();
+			} else if(huntNext){
+				if(HQ.spawn()){
+					HQ.sendInitializeMessage( HQ.buildHuntMessage(huntLeft) );
+					huntNext = false;
+				}
+				else research();
 			}
 			else {
 				if(HQ.lowPower()) research();
@@ -116,6 +132,7 @@ public class Swarm extends Strategy {
 			coolDown = rushDelay;
 			capt1 = true; // Reset the captures for this wave
 			capt2 = true;
+			hunt = true;
 		}
 		if(coolDown > 0) coolDown--;
 		//## else plan stuff, at least initially: improve map evaluation, determine next encampment locations...

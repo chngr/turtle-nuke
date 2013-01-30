@@ -32,11 +32,11 @@ public class RobotPlayer {
                   if(rc.senseCaptureCost() <= rc.getTeamPower()){
                     RobotType build;
                     // ## testing with artillery
-                    build = RobotType.ARTILLERY;
-//                    if(Math.random() > 0.5)
-//                      build = RobotType.SUPPLIER;
-//                    else
-//                      build = RobotType.GENERATOR;
+                    //build = RobotType.ARTILLERY;
+                    if(Math.random() > 0.5)
+                      build = RobotType.SUPPLIER;
+                    else
+                      build = RobotType.GENERATOR;
                     rc.captureEncampment(build);
                   }
                 }

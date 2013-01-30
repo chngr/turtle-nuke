@@ -165,6 +165,11 @@ public class HQRobot extends BaseRobot {
 	  return new char[] {CAPTURE_MSG,(char) encTypeOrdinal,0};
   }
   
+  private static final int HUNT_MSG = 7;
+  public char[] buildHuntMessage(boolean backdoor){
+	  return new char[] {HUNT_MSG, (char) (backdoor ? 1 : 0), 0};
+  }
+  
   public void sendInitializeMessage(char[] data) throws GameActionException{
 	  //System.out.println("Sending:"+Integer.toString((int)data[0])); //DEBUG
 	  comm.send(comm.IDtoCurFreq(-Communicator.INIT_SPACE), data, data.length);

@@ -17,10 +17,12 @@ public class HuntBehavior extends Behavior {
 	private int targetIdx;
 	
 	// Have we finished our back door path?
-	private boolean backdoored;
+	public boolean backdooring = true;
+	
+	public boolean left; //Go left instead of right
 	
 	
-	HuntBehavior(SoldierRobot r) {
+	public HuntBehavior(SoldierRobot r) {
 		super(r);
 		// TODO Auto-generated constructor stub
 	}
@@ -34,14 +36,14 @@ public class HuntBehavior extends Behavior {
 
 	@Override
 	public void run() throws GameActionException {
-		if(!backdoored){
+		if(backdooring){
 			if(r.util.getDistanceBetween(r.curLoc, backPath[pathIdx]) < 3){
 				if(pathIdx < backPath.length - 1){
 					pathIdx++;
 				} else {
 					// Done with our waypoints, hunt
 					initTargets();
-					backdoored = true;
+					backdooring = false;
 					return;
 				}
 			}
@@ -59,7 +61,7 @@ public class HuntBehavior extends Behavior {
 				if(r.curLoc.distanceSquaredTo(targets[targetIdx]) < 14){
 						targetIdx++;
 				} else {
-					r.nav.tunnelTo(backPath[pathIdx]); // ## simpleNav
+					r.nav.tunnelTo(targets[targetIdx]); // ## simpleNav
 				}
 			} else {
 				// Tried all the viable encampment squares
@@ -76,20 +78,21 @@ public class HuntBehavior extends Behavior {
 		//## simple version first
 		
 		Direction eHQDir = r.HQ.directionTo(r.eHQ);
-		int dist = r.util.getDistanceBetween(r.HQ, r.eHQ)*3/4; //##?
+		int dist = r.util.getDistanceBetween(r.HQ, r.eHQ); //##?
 		
-		backPath[0] = restrictToMap(r.HQ.add(eHQDir.rotateRight(), dist));
+		if(left) backPath[0] = restrictToMap(r.HQ.add(eHQDir.rotateLeft(), dist));
+		else backPath[0] = restrictToMap(r.HQ.add(eHQDir.rotateRight(), dist));
 		backPath[1] = restrictToMap(backPath[0].add(eHQDir, dist));
 	}
 	private MapLocation restrictToMap(MapLocation loc){
 		if(loc.x < 0) loc = new MapLocation(0, loc.y);
-		else if(loc.x > r.mapw - 1) loc = new MapLocation(r.mapw - 1, loc.y);
+		else if(loc.x > r.mapw - 2) loc = new MapLocation(r.mapw - 2, loc.y);
 		if(loc.y < 0) loc = new MapLocation(loc.x, 0);
-		else if(loc.x > r.maph - 1) loc = new MapLocation(loc.x, r.maph - 1);
+		else if(loc.y > r.maph - 2) loc = new MapLocation(loc.x, r.maph - 2);
 		return loc;
 	}
 	
-	private void initTargets() throws GameActionException{
+	public void initTargets() throws GameActionException{
 		int dist = r.util.getDistanceBetween(r.curLoc, r.eHQ);
 		targets = r.rc.senseEncampmentSquares(r.curLoc.add(r.curLoc.directionTo(r.eHQ), dist/2), dist*dist/4, Team.NEUTRAL);
 	}

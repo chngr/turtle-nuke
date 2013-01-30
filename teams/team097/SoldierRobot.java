@@ -15,6 +15,7 @@ public class SoldierRobot extends BaseRobot {
 	public FortifyBehavior fortifyBehavior;
 	public ScoutBehavior scoutBehavior;
 	public TravelBehavior travelBehavior;
+	public HuntBehavior huntBehavior;
 	
 	// Artillery detection
 	// If we take damage unexpectedly, there must be an enemy artillery
@@ -32,6 +33,7 @@ public class SoldierRobot extends BaseRobot {
         fortifyBehavior = new FortifyBehavior(this);
         scoutBehavior = new ScoutBehavior(this);
         travelBehavior = new TravelBehavior(this);
+        huntBehavior = new HuntBehavior(this);
         team097Behavior = scoutBehavior; //default
         readMessages(comm.getSticky(2)); // Initialization message
 	}
@@ -98,6 +100,15 @@ public class SoldierRobot extends BaseRobot {
 			
 		case 6: // Artillery detected @@ detectionLoc.x | detectionLoc.y
 			detector.detectedArtilleryAt(new MapLocation(data[startIdx+1],data[startIdx+2]));
+			break;
+			
+		case 7: // Hunt enemy encampments @@ left? | 0
+			setBehavior(huntBehavior);
+			if(data[startIdx+1] == 1){ //
+				huntBehavior.left = true;	
+			}
+			huntBehavior.initPath();
+
 			break;
 
 			
